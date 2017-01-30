@@ -178,6 +178,11 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
 
+        /*
+         * Voyager admin bundle
+         */
+        TCG\Voyager\VoyagerServiceProvider::class,
+
     ],
 
     /*

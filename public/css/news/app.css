@@ -1,0 +1,178 @@
+html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+body {
+  padding-top: 5.1rem;
+  background-color:#eee;
+}
+
+* {
+  -webkit-border-radius: 0 !important;
+     -moz-border-radius: 0 !important;
+          border-radius: 0 !important;
+}
+
+.theme-color {
+	color: #6b8df4;
+}
+
+/* change bootstrap navbar color */
+/* http://work.smarchal.com/twbscolor/scss/6b8df44d3ce7ecf0f1c4d4ee0 */
+.navbar-default {
+  background-color: #6b8df4;
+  border-color: #4d3ce7;
+}
+.navbar-default .navbar-brand {
+  color: #ecf0f1;
+}
+.navbar-default .navbar-brand:hover,
+.navbar-default .navbar-brand:focus {
+  color: #c4d4ee;
+}
+.navbar-default .navbar-text {
+  color: #ecf0f1;
+}
+.navbar-default .navbar-nav > li > a {
+  color: #ecf0f1;
+}
+.navbar-default .navbar-nav > li > a:hover,
+.navbar-default .navbar-nav > li > a:focus {
+  color: #c4d4ee;
+}
+.navbar-default .navbar-nav > .active > a,
+.navbar-default .navbar-nav > .active > a:hover,
+.navbar-default .navbar-nav > .active > a:focus {
+  color: #c4d4ee;
+  background-color: #4d3ce7;
+}
+.navbar-default .navbar-nav > .open > a,
+.navbar-default .navbar-nav > .open > a:hover,
+.navbar-default .navbar-nav > .open > a:focus {
+  color: #c4d4ee;
+  background-color: #4d3ce7;
+}
+.navbar-default .navbar-toggle {
+  border-color: #4d3ce7;
+}
+.navbar-default .navbar-toggle:hover,
+.navbar-default .navbar-toggle:focus {
+  background-color: #4d3ce7;
+}
+.navbar-default .navbar-toggle .icon-bar {
+  background-color: #ecf0f1;
+}
+.navbar-default .navbar-collapse,
+.navbar-default .navbar-form {
+  border-color: #6b8df4;
+}
+.navbar-default .navbar-link {
+  color: #ecf0f1;
+}
+.navbar-default .navbar-link:hover {
+  color: #c4d4ee;
+}
+
+@media (max-width: 767px) {
+  .navbar-default .navbar-nav .open .dropdown-menu > li > a {
+    color: #ecf0f1;
+  }
+  .navbar-default .navbar-nav .open .dropdown-menu > li > a:hover,
+  .navbar-default .navbar-nav .open .dropdown-menu > li > a:focus {
+    color: #c4d4ee;
+  }
+  .navbar-default .navbar-nav .open .dropdown-menu > .active > a,
+  .navbar-default .navbar-nav .open .dropdown-menu > .active > a:hover,
+  .navbar-default .navbar-nav .open .dropdown-menu > .active > a:focus {
+    color: #c4d4ee;
+    background-color: #4d3ce7;
+  }
+}
+/* change bootstrap navbar color */
+
+.adjust-addon-icon {
+	top: 0;
+}
+
+.bs-callout {
+  margin: 0.5rem 0;
+  background-color:#fff;
+  color: #666;
+}
+
+.bs-callout-danger {
+  border-left-color: #ce4844;
+}
+
+.bs-callout-warning {
+  border-left-color: #aa6708;
+}
+
+.bs-callout-info {
+  border-left-color: #1b809e;
+}
+
+.bs-callout-news-info {
+  border-left-color: #6b8df4;
+}
+
+.bs-callout > .span-mark {
+	height:3.5rem;
+	width:5px; 
+	float:left;
+	background-color:#6b8df4;
+	display:block;
+}
+
+.bs-callout > .mark-text {
+	height:100%;
+	font-size:1.8rem;
+	padding:0.6rem 0.6rem 0.6rem 1.2rem;
+}
+
+.badge {
+	border-radius: 1rem !important;
+}
+
+.navbar-form > .input-group {
+	width: 100%;
+}
+
+.collapse-pull-right {
+	float: right;
+	margin-right: 2rem;
+}
+
+/* custom panel item */
+.news-panel-item {
+   box-shadow: 0 1px 1px rgba(0,0,0,.09);
+}
+
+.news-panel-item > .panel-heading {
+	color: #6b8df4;
+}
+
+.news-panel-body {
+	padding: 0px 15px 15px 15px;
+	color: #666;
+	clear: both;
+}
+
+.content-item-title {
+  color: #6b8df4;
+  font-size: 2.2rem;
+}
+
+.content-item-title-bottom {
+  color: #666;
+  padding-right: 0.5rem;
+}
+
+.rank-item-title {
+  color: #6b8df4;
+  font-size: 1.7rem;
+}
+
+/* custom panel item */
+

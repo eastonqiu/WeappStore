@@ -14,3 +14,15 @@
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('weapp', 'WeAppController@index');
+Route::get('weapp/detail', 'WeAppController@detail');
+
+
+Route::group(['prefix' => 'admin'], function () {
+    Voyager::routes();
+});
+
+Auth::routes();
+
+Route::get('/home', 'HomeController@index');

@@ -1,0 +1,28 @@
+.detail-container {
+	background-color:#fff;
+}
+
+.detail-heading {
+	padding: 0.5rem 0;
+}
+
+.detail-content {
+	font-size:1.6rem;
+	line-height: 2.7rem;
+}
+
+.detail-content img {
+	display: inline-block;
+  	clear: both;
+    display: block;
+    margin: auto;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    max-width: 100%;
+	height: auto;
+}
+
+.detail-content div, p {
+	text-indent: 3rem;
+}
+
