@@ -179,10 +179,19 @@ return [
         App\Providers\RouteServiceProvider::class,
 
         /*
-         * Voyager admin bundle
+         * Dingo API
          */
-        TCG\Voyager\VoyagerServiceProvider::class,
+        Dingo\Api\Provider\LaravelServiceProvider::class,
 
+        /*
+         * JWT Auth
+         */
+        'Tymon\JWTAuth\Providers\JWTAuthServiceProvider',
+
+        /*
+         * Laravel wechat
+         */
+        Overtrue\LaravelWechat\ServiceProvider::class,
     ],
 
     /*
@@ -230,6 +239,9 @@ return [
         'URL' => Illuminate\Support\Facades\URL::class,
         'Validator' => Illuminate\Support\Facades\Validator::class,
         'View' => Illuminate\Support\Facades\View::class,
+
+        'JWTAuth' => 'Tymon\JWTAuth\Facades\JWTAuth',
+        'EasyWeChat' => Overtrue\LaravelWechat\Facade::class,
 
     ],
 

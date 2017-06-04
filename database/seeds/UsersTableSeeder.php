@@ -1,8 +1,7 @@
 <?php
 
 use Illuminate\Database\Seeder;
-use TCG\Voyager\Models\Role;
-use TCG\Voyager\Models\User;
+use App\User;
 
 class UsersTableSeeder extends Seeder
 {
@@ -13,16 +12,18 @@ class UsersTableSeeder extends Seeder
      */
     public function run()
     {
-        if (User::count() == 0) {
-            $role = Role::where('name', 'admin')->firstOrFail();
-
-            User::create([
-                'name'           => 'Admin',
-                'email'          => 'admin@admin.com',
-                'password'       => bcrypt('password'),
-                'remember_token' => str_random(60),
-                'role_id'        => $role->id,
-            ]);
-        }
+        User::create([
+            'name'           => 'Admin',
+            'email'          => '123@123.com',
+            'password'       => bcrypt('123'),
+            'remember_token' => str_random(60),
+            'platform'       => 0,
+            'avatar'         => 'http://m.vstou.com/img/201512/hz8_4.jpg',
+            'sex'            => true,
+            'country'        => '中国',
+            'province'       => '广东省',
+            'city'           => '深圳市',
+            'area'           => '福田区',
+        ]);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Cookie\Middleware\EncryptCookies;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,6 +24,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        // disable token encrypt
+        $this->app->resolving(EncryptCookies::class, function ($object) {
+            // need check the ip
+            $object->disableFor('token');
+        });
     }
 }

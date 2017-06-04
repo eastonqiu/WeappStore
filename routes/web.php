@@ -15,14 +15,12 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('weapp', 'WeAppController@index');
-Route::get('weapp/detail', 'WeAppController@detail');
-
-
-Route::group(['prefix' => 'admin'], function () {
-    Voyager::routes();
-});
-
 Auth::routes();
 
 Route::get('/home', 'HomeController@index');
+
+Route::any('wechat', 'WechatController@serve');
+
+Route::group(['middleware' => ['web', 'wechat.oauth']], function () {
+	Route::get('wechat_auth', 'WechatController@auth');
+});
