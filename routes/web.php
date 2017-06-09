@@ -24,11 +24,16 @@ Route::group(['middleware' => 'auth'], function () {
     #adminlte_routes
 });
 
-Route::get('/home', 'HomeController@index');
 Auth::routes();
 
 Route::any('wechat', 'WechatController@serve');
 
 Route::group(['middleware' => ['web', 'wechat.oauth']], function () {
 	Route::get('wechat_auth', 'WechatController@auth');
+});
+
+Route::group(['prefix' => 'admin', 'middleware'=>'auth', 'namespace' => 'Admin'], function () {
+	Route::get('/', 'HomeController@index');
+	Route::get('/home', 'HomeController@index');
+	Route::resource('users', 'UserController');
 });
