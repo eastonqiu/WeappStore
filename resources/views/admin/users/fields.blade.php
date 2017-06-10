@@ -1,12 +1,5 @@
 {!! Form::hidden('id', null) !!}
 
-@if(app('request')->input('pwd'))
-<!-- Password Field -->
-<div class="form-group col-sm-6">
-    {!! Form::label('password', 'Password:') !!}
-    {!! Form::password('password', ['class' => 'form-control']) !!}
-</div>
-@else
 <!-- Name Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('name', 'Name:') !!}
@@ -17,6 +10,12 @@
 <div class="form-group col-sm-6">
     {!! Form::label('email', 'Email:') !!}
     {!! Form::email('email', null, ['class' => 'form-control']) !!}
+</div>
+
+<!-- Password Field -->
+<div class="form-group col-sm-6">
+    {!! Form::label('password', 'Password:') !!}
+    {!! Form::password('password', ['class' => 'form-control']) !!}
 </div>
 
 @permission('role-all')
@@ -31,8 +30,6 @@
     @endforeach
 </div>
 @endpermission
-
-@endif
 
 <!-- Submit Field -->
 <div class="form-group col-sm-12">

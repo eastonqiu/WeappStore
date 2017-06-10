@@ -12,15 +12,15 @@ class AddUserInfo extends Migration
     public function up()
     {
         Schema::table('users', function ($table) {
-            $table->string('openid')->default(NULL);
-            $table->string('nickname')->default(NULL);
+            $table->string('openid')->default('');
+            $table->string('nickname')->default('');
             $table->integer('platform')->default('0');
             $table->string('avatar')->default('users/default.png');
             $table->boolean('sex')->default(true); // male true
             $table->string('country')->default('中国');
-            $table->string('province')->default(NULL);
-            $table->string('city')->default(NULL);
-            $table->string('area')->default(NULL);
+            $table->string('province')->default('');
+            $table->string('city')->default('');
+            $table->string('area')->default('');
         });
     }
 

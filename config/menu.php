@@ -27,6 +27,13 @@ Menu::macro('adminlteSeparator', function ($title) {
 Menu::macro('sidebar', function () {
     $menuData = [
         '/admin' => ['label' => '主页', 'link' => '/admin'],
+        'permission_menu' => [
+            'label' => '权限管理',
+            'items' => [
+                'permissions' => ['label' => '权限管理', 'link' => '/admin/permissions'],
+                'roles' => ['label' => '角色管理', 'link' => '/admin/roles'],
+            ],
+        ],
         'orders' => ['label' => '订单管理', 'link' => '/admin/orders'],
         'shops_menu' => [
             'label' => '商铺管理',

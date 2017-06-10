@@ -1,27 +1,20 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Web\Admin;
 
 use App\Http\Requests;
 use App\Http\Requests\CreateRoleRequest;
 use App\Http\Requests\UpdateRoleRequest;
-use App\Models\Permission;
-use App\Repositories\RoleRepository;
+use App\Role;
 use Illuminate\Http\Request;
 use Flash;
-use InfyOm\Generator\Controller\AppBaseController;
-use Prettus\Repository\Criteria\RequestCriteria;
-use Response;
+use App\Http\Controllers\Controller;
 
-class RoleController extends AppBaseController
+class RoleController extends Controller
 {
-    /** @var  RoleRepository */
-    private $roleRepository;
 
-    public function __construct(RoleRepository $roleRepo)
+    public function __construct()
     {
-        $this->roleRepository = $roleRepo;
-        $this->middleware('permission:role-all');
     }
 
     /**
@@ -32,10 +25,9 @@ class RoleController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $this->roleRepository->pushCriteria(new RequestCriteria($request));
-        $roles = $this->roleRepository->paginate(10);
+        $roles = Role::paginate(10);
 
-        return view('roles.index')
+        return view('admin.roles.index')
             ->with('roles', $roles);
     }
 
@@ -47,7 +39,7 @@ class RoleController extends AppBaseController
     public function create()
     {
         $allPermissions = Permission::all(['id', 'display_name']);
-        return view('roles.create')->with('allPermissions', $allPermissions);
+        return view('admin.roles.create')->with('allPermissions', $allPermissions);
     }
 
     /**
@@ -61,7 +53,7 @@ class RoleController extends AppBaseController
     {
         $input = $request->except('perms');
 
-        $role = $this->roleRepository->create($input);
+        $role = Role::create($input);
 
         $role->perms()->sync($request->get('perms')? : []);
 
@@ -79,15 +71,17 @@ class RoleController extends AppBaseController
      */
     public function show($id)
     {
-        $role = $this->roleRepository->findWithoutFail($id);
+        $role = Role::findOrFail($id);
+
+        // $this->authorize($role); // check
 
         if (empty($role)) {
             Flash::error('Role not found');
 
-            return redirect(route('roles.index'));
+            return redirect(route('admin.roles.index'));
         }
 
-        return view('roles.show')->with('role', $role);
+        return view('admin.roles.show')->with('role', $role);
     }
 
     /**
@@ -99,9 +93,11 @@ class RoleController extends AppBaseController
      */
     public function edit($id)
     {
-        $role = $this->roleRepository->findWithoutFail($id);
+        $role = Role::findOrFail($id);
 
-        $perms = $role->perms->lists('id')->toArray();
+        // $this->authorize('update', $role); // check
+
+        $roles = $role->roles()->with('id')->get()->toArray();
 
         $allPermissions = Permission::all(['id', 'display_name']);
 
@@ -111,7 +107,7 @@ class RoleController extends AppBaseController
             return redirect(route('roles.index'));
         }
 
-        return view('roles.edit')->with(['role' => $role, 'perms' => $perms, 'allPermissions' => $allPermissions]);
+        return view('admin.roles.edit')->with(['role' => $role, 'perms' => $perms, 'allPermissions' => $allPermissions]);
     }
 
     /**
@@ -124,7 +120,7 @@ class RoleController extends AppBaseController
      */
     public function update($id, UpdateRoleRequest $request)
     {
-        $role = $this->roleRepository->findWithoutFail($id);
+        $role = Role::Fail($id);
 
         if (empty($role)) {
             Flash::error('Role not found');
@@ -132,7 +128,11 @@ class RoleController extends AppBaseController
             return redirect(route('roles.index'));
         }
 
-        $role = $this->roleRepository->update($request->except('perms'), $id);
+        $input = $request->except('perms');
+        $user['name'] = $input['name'];
+        $user['display_name'] = $input['display_name'];
+
+        $role->save();
 
         $role->perms()->sync($request->get('perms')? : []);
 
@@ -150,7 +150,9 @@ class RoleController extends AppBaseController
      */
     public function destroy($id)
     {
-        $role = $this->roleRepository->findWithoutFail($id);
+        $role = Role::findOrFail($id);
+
+        // $this->authorize($role); // check
 
         if (empty($role)) {
             Flash::error('Role not found');
@@ -158,7 +160,7 @@ class RoleController extends AppBaseController
             return redirect(route('roles.index'));
         }
 
-        $this->roleRepository->delete($id);
+        Role::destroy($id);
 
         Flash::success('Role deleted successfully.');
 

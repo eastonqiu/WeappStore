@@ -1,6 +1,10 @@
-@extends('layouts.app')
+@extends('adminlte::layouts.app')
 
-@section('content')
+@section('htmlheader_title')
+    {{ trans('adminlte_lang::message.home') }}
+@endsection
+
+@section('main-content')
     <div class="container">
 
         <div class="row">
@@ -9,12 +13,12 @@
             </div>
         </div>
 
-        @include('core-templates::common.errors')
+        @include('common.errors')
 
         <div class="row">
             {!! Form::model($role, ['route' => ['roles.update', $role->id], 'method' => 'patch']) !!}
 
-            @include('roles.fields')
+            @include('admin.roles.fields')
 
             {!! Form::close() !!}
         </div>

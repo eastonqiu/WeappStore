@@ -1,26 +1,20 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Web\Admin;
 
 use App\Http\Requests;
 use App\Http\Requests\CreatePermissionRequest;
 use App\Http\Requests\UpdatePermissionRequest;
-use App\Repositories\PermissionRepository;
+use App\Permission;
 use Illuminate\Http\Request;
 use Flash;
-use InfyOm\Generator\Controller\AppBaseController;
-use Prettus\Repository\Criteria\RequestCriteria;
-use Response;
+use App\Http\Controllers\Controller;
 
-class PermissionController extends AppBaseController
+class PermissionController extends Controller
 {
-    /** @var  PermissionRepository */
-    private $permissionRepository;
 
-    public function __construct(PermissionRepository $permissionRepo)
+    public function __construct()
     {
-        $this->permissionRepository = $permissionRepo;
-        $this->middleware('permission:permission-all');
     }
 
     /**
@@ -31,10 +25,9 @@ class PermissionController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $this->permissionRepository->pushCriteria(new RequestCriteria($request));
-        $permissions = $this->permissionRepository->paginate(10);
+        $permissions = Permission::paginate(10);
 
-        return view('permissions.index')
+        return view('admin.permissions.index')
             ->with('permissions', $permissions);
     }
 
@@ -45,7 +38,7 @@ class PermissionController extends AppBaseController
      */
     public function create()
     {
-        return view('permissions.create');
+        return view('admin.permissions.create');
     }
 
     /**
@@ -59,7 +52,7 @@ class PermissionController extends AppBaseController
     {
         $input = $request->all();
 
-        $permission = $this->permissionRepository->create($input);
+        $permission = Permission::create($input);
 
         Flash::success('Permission saved successfully.');
 
@@ -75,15 +68,17 @@ class PermissionController extends AppBaseController
      */
     public function show($id)
     {
-        $permission = $this->permissionRepository->findWithoutFail($id);
+        $permission = Permission::findOrFail($id);
+
+        // $this->authorize($permission); // check
 
         if (empty($permission)) {
             Flash::error('Permission not found');
 
-            return redirect(route('permissions.index'));
+            return redirect(route('admin.permissions.index'));
         }
 
-        return view('permissions.show')->with('permission', $permission);
+        return view('admin.permissions.show')->with('permission', $permission);
     }
 
     /**
@@ -95,7 +90,7 @@ class PermissionController extends AppBaseController
      */
     public function edit($id)
     {
-        $permission = $this->permissionRepository->findWithoutFail($id);
+        $permission = Permission::findOrFail($id);
 
         if (empty($permission)) {
             Flash::error('Permission not found');
@@ -103,7 +98,9 @@ class PermissionController extends AppBaseController
             return redirect(route('permissions.index'));
         }
 
-        return view('permissions.edit')->with('permission', $permission);
+        return view('admin.permissions.edit')->with('permission', $permission);
+
+        $permission = Permission::findOrFail($id);
     }
 
     /**
@@ -116,7 +113,7 @@ class PermissionController extends AppBaseController
      */
     public function update($id, UpdatePermissionRequest $request)
     {
-        $permission = $this->permissionRepository->findWithoutFail($id);
+        $permission = Permission::Fail($id);
 
         if (empty($permission)) {
             Flash::error('Permission not found');
@@ -124,7 +121,11 @@ class PermissionController extends AppBaseController
             return redirect(route('permissions.index'));
         }
 
-        $permission = $this->permissionRepository->update($request->all(), $id);
+        $input = $request->except('perms');
+        $user['name'] = $input['name'];
+        $user['display_name'] = $input['display_name'];
+
+        $permission->save();
 
         Flash::success('Permission updated successfully.');
 
@@ -140,7 +141,9 @@ class PermissionController extends AppBaseController
      */
     public function destroy($id)
     {
-        $permission = $this->permissionRepository->findWithoutFail($id);
+        $permission = Permission::findOrFail($id);
+
+        // $this->authorize($permission); // check
 
         if (empty($permission)) {
             Flash::error('Permission not found');
@@ -148,7 +151,7 @@ class PermissionController extends AppBaseController
             return redirect(route('permissions.index'));
         }
 
-        $this->permissionRepository->delete($id);
+        Permission::destroy($id);
 
         Flash::success('Permission deleted successfully.');
 

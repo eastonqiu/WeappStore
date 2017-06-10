@@ -10,16 +10,10 @@
     <p>{!! $permission->name !!}</p>
 </div>
 
-<!-- Display Name Field -->
+<!-- Display_name Field -->
 <div class="form-group">
-    {!! Form::label('display_name', 'Display Name:') !!}
+    {!! Form::label('display_name', 'Email:') !!}
     <p>{!! $permission->display_name !!}</p>
-</div>
-
-<!-- Description Field -->
-<div class="form-group">
-    {!! Form::label('description', 'Description:') !!}
-    <p>{!! $permission->description !!}</p>
 </div>
 
 <!-- Created At Field -->
@@ -33,4 +27,3 @@
     {!! Form::label('updated_at', 'Updated At:') !!}
     <p>{!! $permission->updated_at !!}</p>
 </div>
-

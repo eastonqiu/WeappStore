@@ -1,7 +1,11 @@
-@extends('layouts.app')
+@extends('adminlte::layouts.app')
 
-@section('content')
+@section('htmlheader_title')
+    {{ trans('adminlte_lang::message.home') }}
+@endsection
+
+@section('main-content')
 <div class="container">
-    @include('users.show_fields')
+    @include('admin.users.show_fields')
 </div>
 @endsection

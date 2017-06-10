@@ -1,10 +1,13 @@
-@extends('layouts.app')
+@extends('adminlte::layouts.app')
 
-@section('content')
+@section('htmlheader_title')
+    {{ trans('adminlte_lang::message.home') }}
+@endsection
 
+@section('main-content')
     <div class="container">
 
-        <h1 class="pull-left">Permissions</h1>
+        <h1 class="pull-left">permissions</h1>
         <a class="btn btn-primary pull-right" style="margin-top: 25px" href="{!! route('permissions.create') !!}">Add New</a>
 
         <div class="clearfix"></div>
@@ -14,12 +17,12 @@
         <div class="clearfix"></div>
 
         @if($permissions->isEmpty())
-            <div class="well text-center">No Permissions found.</div>
+            <div class="well text-center">No permissions found.</div>
         @else
-            @include('permissions.table')
+            @include('admin.permissions.table')
         @endif
 
-        @include('core-templates::common.paginate', ['records' => $permissions])
+        {{ $permissions->links() }}
 
     </div>
 @endsection

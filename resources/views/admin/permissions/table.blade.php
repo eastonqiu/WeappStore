@@ -2,7 +2,6 @@
     <thead>
         <th>Name</th>
         <th>Display Name</th>
-        <th>Description</th>
         <th colspan="3">Action</th>
     </thead>
     <tbody>
@@ -10,7 +9,6 @@
         <tr>
             <td>{!! $permission->name !!}</td>
             <td>{!! $permission->display_name !!}</td>
-            <td>{!! $permission->description !!}</td>
             <td>
                 {!! Form::open(['route' => ['permissions.destroy', $permission->id], 'method' => 'delete']) !!}
                 <div class='btn-group'>

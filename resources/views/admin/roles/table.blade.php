@@ -2,7 +2,6 @@
     <thead>
         <th>Name</th>
         <th>Display Name</th>
-        <th>Description</th>
         <th colspan="3">Action</th>
     </thead>
     <tbody>
@@ -10,7 +9,6 @@
         <tr>
             <td>{!! $role->name !!}</td>
             <td>{!! $role->display_name !!}</td>
-            <td>{!! $role->description !!}</td>
             <td>
                 {!! Form::open(['route' => ['roles.destroy', $role->id], 'method' => 'delete']) !!}
                 <div class='btn-group'>

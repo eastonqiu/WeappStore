@@ -1,7 +1,10 @@
-@extends('layouts.app')
+@extends('adminlte::layouts.app')
 
-@section('content')
+@section('htmlheader_title')
+    {{ trans('adminlte_lang::message.home') }}
+@endsection
 
+@section('main-content')
     <div class="container">
 
         <h1 class="pull-left">Roles</h1>
@@ -16,10 +19,10 @@
         @if($roles->isEmpty())
             <div class="well text-center">No Roles found.</div>
         @else
-            @include('roles.table')
+            @include('admin.roles.table')
         @endif
 
-        @include('core-templates::common.paginate', ['records' => $roles])
+        {{ $roles->links() }}
 
     </div>
 @endsection

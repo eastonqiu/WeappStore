@@ -7,7 +7,6 @@ use App\Http\Requests\CreateUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Role;
 use App\User;
-use App\Repositories\UserRepository;
 use Illuminate\Http\Request;
 use Flash;
 use App\Http\Controllers\Controller;
@@ -41,7 +40,7 @@ class UserController extends Controller
     public function create()
     {
         $allRoles = Role::all(['id', 'display_name']);
-        return view('users.create')->with('allRoles', $allRoles);
+        return view('admin.users.create')->with('allRoles', $allRoles);
     }
 
     /**
@@ -57,7 +56,7 @@ class UserController extends Controller
 
         $input['password'] = bcrypt($input['password']);
 
-        $user = $this->userRepository->create($input);
+        $user = User::create($input);
 
         $user->roles()->sync($request->get('roles')? : []);
 
@@ -75,17 +74,17 @@ class UserController extends Controller
      */
     public function show($id)
     {
-        $user = $this->userRepository->findWithoutFail($id);
+        $user = User::findOrFail($id);
 
-        $this->authorize($user); // check
+        // $this->authorize($user); // check
 
         if (empty($user)) {
             Flash::error('User not found');
 
-            return redirect(route('users.index'));
+            return redirect(route('admin.users.index'));
         }
 
-        return view('users.show')->with('user', $user);
+        return view('admin.users.show')->with('user', $user);
     }
 
     /**
@@ -97,11 +96,11 @@ class UserController extends Controller
      */
     public function edit($id)
     {
-        $user = $this->userRepository->findWithoutFail($id);
+        $user = User::findOrFail($id);
 
-        $this->authorize('update', $user); // check
+        // $this->authorize('update', $user); // check
 
-        $roles = $user->roles()->lists('id')->toArray();
+        $roles = $user->roles()->with('id')->get()->toArray();
 
         $allRoles = Role::all(['id', 'display_name']);
 
@@ -111,7 +110,7 @@ class UserController extends Controller
             return redirect(route('users.index'));
         }
 
-        return view('users.edit')->with(['user' => $user, 'roles' => $roles, 'allRoles' => $allRoles]);
+        return view('admin.users.edit')->with(['user' => $user, 'roles' => $roles, 'allRoles' => $allRoles]);
     }
 
     /**
@@ -124,23 +123,23 @@ class UserController extends Controller
      */
     public function update($id, UpdateUserRequest $request)
     {
-        $user = $this->userRepository->findWithoutFail($id);
+        $user = User::findOrFail($id);
 
-        $this->authorize($user); // check
+        // $this->authorize($user); // check
 
         if (empty($user)) {
             Flash::error('User not found');
-
             return redirect(route('users.index'));
         }
 
         $input = $request->except('roles');
-
+        $user['email'] = $input['email'];
+        $user['name'] = $input['name'];
         if(isset($input['password'])) {
-            $input['password'] = bcrypt($input['password']);
+            $user['password'] = bcrypt($input['password']);
         }
 
-        $user = $this->userRepository->update($input, $id);
+        $user->update($input);
 
         $user->roles()->sync($request->get('roles')? : []);
 
@@ -158,9 +157,9 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
-        $user = $this->userRepository->findWithoutFail($id);
+        $user = User::findOrFail($id);
 
-        $this->authorize($user); // check
+        // $this->authorize($user); // check
 
         if (empty($user)) {
             Flash::error('User not found');
@@ -168,7 +167,7 @@ class UserController extends Controller
             return redirect(route('users.index'));
         }
 
-        $this->userRepository->delete($id);
+        User::destroy($id);
 
         Flash::success('User deleted successfully.');
 
