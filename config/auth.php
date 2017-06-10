@@ -67,7 +67,7 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => App\User::class,
+            'model' => App\Models\User::class,
         ],
 
         // 'users' => [
@@ -98,5 +98,8 @@ return [
             'expire' => 60,
         ],
     ],
+
+    // add this to fix entrust bug for laravel5.3
+    'model' => App\Models\User::class,
 
 ];

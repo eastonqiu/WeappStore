@@ -5,7 +5,8 @@ namespace App\Http\Controllers\Web\Admin;
 use App\Http\Requests;
 use App\Http\Requests\CreateRoleRequest;
 use App\Http\Requests\UpdateRoleRequest;
-use App\Role;
+use App\Models\Role;
+use App\Models\Permission;
 use Illuminate\Http\Request;
 use Flash;
 use App\Http\Controllers\Controller;
@@ -97,7 +98,7 @@ class RoleController extends Controller
 
         // $this->authorize('update', $role); // check
 
-        $roles = $role->roles()->with('id')->get()->toArray();
+        $perms = array_column($role->perms()->get(['id'])->toArray(), 'id');
 
         $allPermissions = Permission::all(['id', 'display_name']);
 
@@ -120,7 +121,7 @@ class RoleController extends Controller
      */
     public function update($id, UpdateRoleRequest $request)
     {
-        $role = Role::Fail($id);
+        $role = Role::findOrFail($id);
 
         if (empty($role)) {
             Flash::error('Role not found');
@@ -129,8 +130,9 @@ class RoleController extends Controller
         }
 
         $input = $request->except('perms');
-        $user['name'] = $input['name'];
-        $user['display_name'] = $input['display_name'];
+        $role['name'] = $input['name'];
+        $role['display_name'] = $input['display_name'];
+        $role['description'] = $input['description'];
 
         $role->save();
 
@@ -160,7 +162,7 @@ class RoleController extends Controller
             return redirect(route('roles.index'));
         }
 
-        Role::destroy($id);
+        $role->delete();
 
         Flash::success('Role deleted successfully.');
 

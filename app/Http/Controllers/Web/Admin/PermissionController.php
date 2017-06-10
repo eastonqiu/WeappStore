@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Web\Admin;
 use App\Http\Requests;
 use App\Http\Requests\CreatePermissionRequest;
 use App\Http\Requests\UpdatePermissionRequest;
-use App\Permission;
+use App\Models\Permission;
 use Illuminate\Http\Request;
 use Flash;
 use App\Http\Controllers\Controller;
@@ -122,8 +122,9 @@ class PermissionController extends Controller
         }
 
         $input = $request->except('perms');
-        $user['name'] = $input['name'];
-        $user['display_name'] = $input['display_name'];
+        $permission['name'] = $input['name'];
+        $permission['display_name'] = $input['display_name'];
+        $permission['description'] = $input['description'];
 
         $permission->save();
 
@@ -151,8 +152,8 @@ class PermissionController extends Controller
             return redirect(route('permissions.index'));
         }
 
-        Permission::destroy($id);
-
+        $permission->delete();
+        
         Flash::success('Permission deleted successfully.');
 
         return redirect(route('permissions.index'));

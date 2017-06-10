@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Web\Admin;
 use App\Http\Requests;
 use App\Http\Requests\CreateUserRequest;
 use App\Http\Requests\UpdateUserRequest;
-use App\Role;
-use App\User;
+use App\Models\Role;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Flash;
 use App\Http\Controllers\Controller;
@@ -100,7 +100,7 @@ class UserController extends Controller
 
         // $this->authorize('update', $user); // check
 
-        $roles = $user->roles()->with('id')->get()->toArray();
+        $roles = array_column($user->roles()->get(['id'])->toArray(), 'id');
 
         $allRoles = Role::all(['id', 'display_name']);
 
@@ -167,7 +167,8 @@ class UserController extends Controller
             return redirect(route('users.index'));
         }
 
-        User::destroy($id);
+        // User::destroy($id);
+        $user->delete();
 
         Flash::success('User deleted successfully.');
 

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use Log;
 use App\Http\Controllers\Controller;
-use App\User;
+use App\Models\User;
 use JWTAuth;
 use Illuminate\Http\Request;
 

@@ -18,7 +18,7 @@
     {!! Form::password('password', ['class' => 'form-control']) !!}
 </div>
 
-@permission('role-all')
+<!-- @ permission('role-all') -->
 <!-- Roles Field -->
 <div class="form-group col-sm-12 col-lg-12">
     {!! Form::label('roles', 'Roles:') !!}
@@ -29,7 +29,7 @@
         </div>
     @endforeach
 </div>
-@endpermission
+<!-- @ endpermission -->
 
 <!-- Submit Field -->
 <div class="form-group col-sm-12">
