@@ -39,6 +39,9 @@ class CreateBorrowOrdersTable extends Migration
             $table->unsignedInteger('borrow_shop_id')->default(0)->index();
             $table->unsignedInteger('return_shop_id')->default(0)->index();
 
+            $table->text('fee_strategy');
+            $table->text('msg');
+
             $table->unsignedInteger('refund_no')->default(0);
             $table->unsignedInteger('refundable')->default(0);
 

@@ -15,6 +15,8 @@ class CreateDeviceStrategiesTable extends Migration
     {
         Schema::create('device_strategies', function (Blueprint $table) {
             $table->increments('id');
+            $table->string('name');
+            $table->string('value', 2000);
             $table->timestamps();
             $table->softDeletes();
         });

@@ -23,6 +23,7 @@ class CreateDevicesTable extends Migration
             $table->unsignedInteger('soft_ver')->default(0)->index();
             $table->unsignedInteger('device_ver')->default(0)->index();
             $table->unsignedInteger('device_strategy_id')->default(0)->index();
+            $table->boolean('sdcard')->default(true);
             $table->unsignedTinyInteger('status')->default(0)->index();
             $table->timestamp('last_sync')->nullable();
             $table->timestamps();

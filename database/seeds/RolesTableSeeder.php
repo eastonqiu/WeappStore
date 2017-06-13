@@ -14,16 +14,24 @@ class RolesTableSeeder extends Seeder
     {
         DB::table('roles')->insert([
             'name' => 'Root',
-            'display_name' => 'Root',
-            'description' => 'Super User, everything.',
+            'display_name' => '超级管理员',
+            'description' => 'Everything',
             'created_at' => Carbon::now()->format('Y-m-d H:i:s'),
             'updated_at' => Carbon::now()->format('Y-m-d H:i:s'),
         ]);
 
         DB::table('roles')->insert([
             'name' => 'Admin',
-            'display_name' => 'Admin',
-            'description' => 'Admin but can not modify the roles and permissions',
+            'display_name' => '管理员',
+            'description' => '业务管理员, 无角色权限管理',
+            'created_at' => Carbon::now()->format('Y-m-d H:i:s'),
+            'updated_at' => Carbon::now()->format('Y-m-d H:i:s'),
+        ]);
+
+        DB::table('roles')->insert([
+            'name' => 'maintain_man',
+            'display_name' => '售后角色',
+            'description' => '维护设备',
             'created_at' => Carbon::now()->format('Y-m-d H:i:s'),
             'updated_at' => Carbon::now()->format('Y-m-d H:i:s'),
         ]);

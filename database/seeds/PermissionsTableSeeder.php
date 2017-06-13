@@ -44,7 +44,6 @@ class PermissionsTableSeeder extends Seeder
             'updated_at' => Carbon::now()->format('Y-m-d H:i:s'),
         ]);
 
-
         DB::table('permissions')->insert([
             'name' => 'user-destroy',
             'display_name' => 'user-destroy',
@@ -54,25 +53,9 @@ class PermissionsTableSeeder extends Seeder
         ]);
 
         DB::table('permissions')->insert([
-            'name' => 'post-show',
-            'display_name' => 'post-show',
-            'description' => 'Show Post',
-            'created_at' => Carbon::now()->format('Y-m-d H:i:s'),
-            'updated_at' => Carbon::now()->format('Y-m-d H:i:s'),
-        ]);
-
-        DB::table('permissions')->insert([
-            'name' => 'post-update',
-            'display_name' => 'post-update',
-            'description' => 'Update Post',
-            'created_at' => Carbon::now()->format('Y-m-d H:i:s'),
-            'updated_at' => Carbon::now()->format('Y-m-d H:i:s'),
-        ]);
-
-        DB::table('permissions')->insert([
-            'name' => 'post-destroy',
-            'display_name' => 'post-destroy',
-            'description' => 'Delete Post',
+            'name' => 'maintain_device',
+            'display_name' => '维护权限',
+            'description' => '维护设备',
             'created_at' => Carbon::now()->format('Y-m-d H:i:s'),
             'updated_at' => Carbon::now()->format('Y-m-d H:i:s'),
         ]);

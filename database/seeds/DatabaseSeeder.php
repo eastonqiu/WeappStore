@@ -27,10 +27,11 @@ class DatabaseSeeder extends Seeder
         $userShowPerm = Permission::where('name', 'user-show')->first();
         $userUpdatePerm = Permission::where('name', 'user-update')->first();
         $userDestroyPerm = Permission::where('name', 'user-destroy')->first();
-        $postShowPerm = Permission::where('name', 'post-show')->first();
+        $maintainPerm = Permission::where('name', 'maintain_device')->first();
 
         $rootRole = Role::where('name', 'Root')->first();
         $adminRole = Role::where('name', 'Admin')->first();
+        $maintainRole = Role::where('name', 'maintain_man')->first();
 
         $rootUser = User::where('email', 'root@163.com')->first();
         $adminUser = User::where('email', 'admin@163.com')->first();
@@ -38,11 +39,13 @@ class DatabaseSeeder extends Seeder
         // root -> all perms
         $rootRole->attachPermissions($allPerms);
 
+        // maintain permission
+        $maintainRole->attachPermission($maintainPerm);
+
         // admin -> all user  and only show of post
         $adminRole->attachPermission($userShowPerm);
         $adminRole->attachPermission($userUpdatePerm);
         $adminRole->attachPermission($userDestroyPerm);
-        $adminRole->attachPermission($postShowPerm);
 
         // root_user -> root
         $rootUser->attachRole($rootRole);
@@ -50,6 +53,5 @@ class DatabaseSeeder extends Seeder
         // admin_user -> admin
         $adminUser->attachRole($adminRole);
 
-        // nothing for jack, he is a normal user.
     }
 }

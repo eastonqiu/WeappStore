@@ -16,9 +16,11 @@ class CreateSlotsTable extends Migration
         Schema::create('slots', function (Blueprint $table) {
             $table->increments('id');
             $table->unsignedInteger('device_id')->default(0);
+            $table->unsignedInteger('battery_id')->default(0);
             $table->unsignedSmallInteger('slot')->default(0);
             $table->unsignedTinyInteger('status')->default(0)->index();
             $table->string('sensors')->default('');
+            $table->timestamp('last_sync')->nullable();
             $table->timestamps();
             $table->softDeletes();
 

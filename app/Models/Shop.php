@@ -8,8 +8,22 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Shop extends Model
 {
     use SoftDeletes;
-	
+
     protected $guarded = [
         'id', 'created_at', 'updated_at', 'deleted_at'
     ];
+
+    public function feeStrategy() {
+        return $this->hasOne(FeeStrategy::class);
+    }
+
+    public function getFeeStrategy() {
+        $strategy = $this->feeStrategy;
+        if(empty($strategy)) {
+            $strategy = Settings::get(Settings::FEE_STRATEGY);
+        } else {
+            $strategy = $strategy['value'];
+        }
+        return json_decode($strategy, true);
+    }
 }

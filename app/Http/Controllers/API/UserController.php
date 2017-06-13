@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace App\Http\Controllers\API;
 
@@ -8,17 +8,17 @@ use App\Http\Controllers\Controller;
 
 class UserController extends Controller {
 	use Helpers;
-	
+
 	function __construct() {
 		// 		$this->middleware();
 	}
-	
+
 	public function profile() {
 		return $this->auth->user();
 	}
 
 	public function logout() {
         $this->auth->logout();
-        return response()->json(['msg' => 'ok']);;
+        return response()->json(['msg' => 'ok']);
     }
 }
