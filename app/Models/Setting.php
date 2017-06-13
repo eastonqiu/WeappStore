@@ -23,11 +23,11 @@ class Setting extends Model
         // set default value
         if(empty($value)) {
             switch($key) {
-                case DEVICE_STRATEGY:
+                case self::DEVICE_STRATEGY:
                     // default
                     // $value = xxx;
                     break;
-                case FEE_STRATEGY:
+                case self::FEE_STRATEGY:
                     // default
                     break;
             }
