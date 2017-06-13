@@ -46,4 +46,19 @@ $api->version('v1', ['middleware' => 'api.throttle', 'limit' => 100, 'expires' =
     // public
     $api->post('/login', 'App\Http\Controllers\API\AuthController@login');
     $api->get('/refresh_token', 'App\Http\Controllers\API\AuthController@refreshToken');
+
+    // for device
+    $api->group(['middleware' => 'device.auth', 'prefix' => 'device', 'namespace' => 'App\Http\Controllers\API\Device'], function ($api) {
+        // sync
+        $api->get('/sync_setting', 'DeviceController@syncSetting');
+        $api->post('/sync_battery', 'DeviceController@syncBattery');
+        $api->post('/remove_battery', 'DeviceController@removeBattery');
+        $api->get('/get_logs_token', 'DeviceController@getLogsToken');
+
+        // business
+        $api->post('/borrow_confirm', 'DeviceController@borrowConfirm');
+        $api->post('/return_back', 'DeviceController@returnBack');
+
+    });
+
 });

@@ -39,11 +39,19 @@ Menu::macro('sidebar', function () {
             'label' => '商铺管理',
             'items' => [
                 'shops' => ['label' => '商铺管理', 'link' => '/admin/shops'],
-                'shop_stations' => ['label' => '商铺站点管理', 'link' => '/admin/shop_stations'],
+                'stations' => ['label' => '站点管理', 'link' => '/admin/stations'],
             ],
         ],
-        'stations' => ['label' => '站点管理', 'link' => '/admin/stations'],
+        'devices_menu' => [
+            'label' => '设备管理',
+            'items' => [
+                'devices' => ['label' => '设备管理', 'link' => '/admin/devices'],
+                'batteries' => ['label' => '电池管理', 'link' => '/admin/batteries'],
+                'slots' => ['label' => '槽位管理', 'link' => '/admin/slots'],
+            ]
+        ],
         'users' => ['label' => '用户管理', 'link' => '/admin/users'],
+        'refund_logs' => ['label' => '提现记录', 'link' => '/admin/refund_logs'],
     ];
 
     $menuBuilder = function($menu) use (&$menuBuilder) {

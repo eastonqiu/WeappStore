@@ -15,6 +15,10 @@ class CreateStationsTable extends Migration
     {
         Schema::create('stations', function (Blueprint $table) {
             $table->increments('id');
+            $table->unsignedInteger('shop_id')->default(0)->index();
+            $table->unsignedInteger('station_id')->default(0)->index();
+            $table->string('position');
+            $table->unsignedTinyInteger('status')->default(0)->index();
             $table->timestamps();
             $table->softDeletes();
         });

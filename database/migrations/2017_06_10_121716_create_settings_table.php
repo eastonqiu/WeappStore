@@ -14,9 +14,12 @@ class CreateSettingsTable extends Migration
     public function up()
     {
         Schema::create('settings', function (Blueprint $table) {
-            $table->increments('id');
+            $table->string('skey');
+            $table->text('svalue');
             $table->timestamps();
             $table->softDeletes();
+
+            $table->primary('skey');
         });
     }
 
