@@ -8,8 +8,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class DeviceStrategy extends Model
 {
     use SoftDeletes;
-	
+
     protected $guarded = [
         'id', 'created_at', 'updated_at', 'deleted_at'
     ];
+
+    public function devices() {
+        return $this->hasMany(Device::class);
+    }
 }

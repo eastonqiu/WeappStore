@@ -31,7 +31,7 @@ class Device extends Model
 		return $strategy;
 	}
 
-	public static function syncBattery($deviceId, $deviceInfo, $slots) {
+	public static function syncBattery($deviceId, $deviceInfo, $batteries) {
         // device info
         $device = Device::find($deviceId);
         $device['total'] = $deviceInfo['total'];
@@ -48,6 +48,7 @@ class Device extends Model
             // 更新电池信息
             if(! empty($battery['id'])) {
                 Battery::firstOrCreate(['id', $battery['id']])->update([
+                    'id' => $battery['id'],
                     'device_id' => $battery['device_id'],
                     'slot' => $battery['slot'],
                     'power' => $battery['power'],
@@ -98,7 +99,7 @@ class Device extends Model
             // 直接检查是否已经确认
             if($order['status'] == BorrowOrder::ORDER_STATUS_BORROW_CONFIRM) {
                 Log::debug('check, it is confirm now, need not retry, it is ok ' . $orderid . ', status:' . $order['status']);
-                return Errors::success('confirm success'));
+                return Errors::success('confirm success');
             }
             // 其他状态重试，则直接返回成功, 间隔时间不超过15s
             if($order && $_GET['retry'] && (time() - strtotime($order['updated_at']) < 15)) {
@@ -257,22 +258,41 @@ class Device extends Model
     		return Errors::success("repeated request {$battery['id']}, $orderid");
     	}
 
+    	// 带归还时间验证, 单位为秒 数字长度为10, 长度为13是设备端传过来了单位为毫秒的, 这里进行规避
+    	if(! is_numeric($batteryInfo['time'])) {
+    		$batteryInfo['time'] = 0;
+    	}
+    	if(strlen($batteryInfo['time']) == 13) {
+    		$batteryInfo['time'] = ceil($batteryInfo['time'] / 1000);
+    	}
+
         $device = Device::find($deviceId);
 
+        $battery['status'] = BATTERY::BATTERY_INSIDE;
+        $battery['slot'] = $batteryInfo['slot'];
+        $battery['power'] = $batteryInfo['power'];
+        $battery['temperature'] = $batteryInfo['temperature'];
+        $battery['voltage'] = $batteryInfo['voltage'];
+        $battery['current'] = $batteryInfo['current'];
+        $battery->save();
+        Slot::where('device_id', $deviceId)->where('slot', $battery['slot'])->update([
+            'battery_id' => $battery['id'],
+        ]);
+    	Log::debug('update battery status, inside station');
+
+        // 更新订单状态
+        $order['return_device_id'] = $deviceId;
+        $order['return_device_ver'] = $device['device_ver'];
+        $order['return_station_id'] = $device->station->id ? : 0;
+        $order['return_shop_id'] = $device->station->shop->id ? : 0;
+        $order['return_station_name'] = $device->getStationName();
+        $order['return_time'] = $returnTime;
     	// 过滤重复归还
     	if($order['status'] != BorrowOrder::ORDER_STATUS_BORROW_CONFIRM) {
     		Log::error("the status of order:" . $orderid . " is wrong: " . $order['status']);
-            $battery['status'] = BATTERY::BATTERY_INSIDE;
-            $battery->save();
-    		Log::debug('correct battery status, inside station');
-    		if ($order['sub_status'] == BorrowOrder::ORDER_STATUS_DEPOSIT_OUT_NOT_RETURN]) {
+    		if ($order['sub_status'] == BorrowOrder::ORDER_STATUS_DEPOSIT_OUT_NOT_RETURN) {
                 $order['sub_status'] = BorrowOrder::ORDER_STATUS_DEPOSIT_OUT_RETURN;
-                $order['return_device_id'] = $deviceId;
-                $order['return_device_ver'] = $device['device_ver'];
-                $order['return_station_id'] = $device->station->id ? : 0;
-                $order['return_shop_id'] = $device->station->->shop->id ? 0;
-                $order['return_station_name'] = $device->getStationName();
-                $order['return_time'] = time();
+                $order->save();
 
     			// $wxmsg = array('openid'=>$openid, 'platform'=>$platform, 'orderid'=>$orderid, 'difftime'=>($returnTime-$order['borrow_time']), 'returntime'=>$returnTime, 'usefee'=>$order['usefee'], 'battery'=>$battery['id'], 'return_station'=>$station['title'], 'needAdapterFee'=> 0, 'needCableFee'=> 0);
     			// $type = $platform == PLATFORM_WX ? WX_TEMPLATE : ALIPAY_TEMPLATE;
@@ -285,13 +305,6 @@ class Device extends Model
     	$orderMsg = json_decode($order['msg'], true);
     	$orderMsg['battery_return'] = $batteryInfo;
 
-    	// 带归还时间验证, 单位为秒 数字长度为10, 长度为13是设备端传过来了单位为毫秒的, 这里进行规避
-    	if(! is_numeric($batteryInfo['time'])) {
-    		$batteryInfo['time'] = 0;
-    	}
-    	if(strlen($batteryInfo['time']) == 13) {
-    		$batteryInfo['time'] = ceil($batteryInfo['time'] / 1000);
-    	}
     	// 归还时间不能大于当前时间或者小于借出时间, 否则为非法, 采用当前时间归还
     	$returnTime = (empty($batteryInfo['time']) || ($batteryInfo['time'] > time()) || ($batteryInfo['time'] < $order['borrow_time'])) ? time() : $batteryInfo['time'];
 
@@ -311,67 +324,35 @@ class Device extends Model
         Log::debug('return deposit to user account ok');
 
         // 更新订单状态
+        $order['status'] = BorrowOrder::ORDER_STATUS_RETURN;
+        $order['usefee'] = $usefee;
+        $order['msg'] = json_encode($orderMsg);
     	if($usefee >= $order['price']) {
-    		LOG::DEBUG('borrow too long time, desposit not enough, refund: ' . $orderMsg['refund_fee']);
-    		$updateStatus = $orderReturnStatus == ORDER_STATUS_RETURN ? ORDER_STATUS_TIMEOUT_CANT_RETURN : $orderReturnStatus;
-    		$ret = C::t('#mcs#mcs_tradelog')->update($orderid, [
-    			'status' => $updateStatus,
-    			'return_station'=>$sid,
-    			'return_shop_station_id'=>$returnShopStationId,
-    			'return_time'=>$returnTime,
-    			'usefee'=>$usefee,
-    			'message' => serialize($orderMsg),
-    			'lastupdate' => time(),
-                'return_shop_id' => $returnShopStationInfo['shopid'],
-                'return_city' => $returnShopInfo['city'],
-                'return_station_name' => $station['title'],
-                'return_device_ver' => $station['device_ver'],
-    		]);
-    		if(! $ret) {
-    			LOG::ERROR('update order refund no fail');
-    		}
-    		DB::update('mcs_battery', array('stationid'=>$sid, 'status'=>BATTERY_INSIDE, 'power'=>0), DB::field('id', $battery['id']));
-    		$wxmsg = array('openid'=>$openid, 'platform'=>$platform, 'orderid'=>$orderid, 'difftime'=>($returnTime-$order['borrow_time']), 'returntime'=>$returnTime, 'usefee'=>$usefee, 'battery'=>$battery_id, 'return_station'=>$station['title'], 'needAdapterFee'=>$needAdapterFee, 'needCableFee'=>$needCableFee, 'new_credit'=>$creditsInfo[0], 'total_credit'=>$creditsInfo[1]);
-    		$type = $platform == PLATFORM_WX ? WX_TEMPLATE : ALIPAY_TEMPLATE;
-    		addMsgToQueue($type, getReturnMsg($wxmsg));
-    		return makeErrorData(ERR_NORMAL, 'desposit not enough, but can be returned');
+    		Log::debug('borrow too long time, desposit not enough');
+    		$order['status'] = BorrowOrder::ORDER_STATUS_DEPOSIT_OUT_RETURN;
+            $order->save();
+
+    		// $wxmsg = array('openid'=>$openid, 'platform'=>$platform, 'orderid'=>$orderid, 'difftime'=>($returnTime-$order['borrow_time']), 'returntime'=>$returnTime, 'usefee'=>$usefee, 'battery'=>$battery_id, 'return_station'=>$station['title'], 'needAdapterFee'=>$needAdapterFee, 'needCableFee'=>$needCableFee, 'new_credit'=>$creditsInfo[0], 'total_credit'=>$creditsInfo[1]);
+    		// $type = $platform == PLATFORM_WX ? WX_TEMPLATE : ALIPAY_TEMPLATE;
+    		// addMsgToQueue($type, getReturnMsg($wxmsg));
+
+    		return Errors::success('desposit not enough, but can be returned');
     	}
 
-    	$ret = C::t('#mcs#mcs_tradelog')->update($orderid, [
-    		'status' => $orderReturnStatus,
-    		'return_station'=>$sid,
-    		'return_shop_station_id'=>$returnShopStationId,
-    		'return_time'=>$returnTime,
-    		'usefee'=>$usefee,
-    		'message' => serialize($orderMsg),
-    		'lastupdate' => time(),
-            'return_shop_id' => $returnShopStationInfo['shopid'],
-            'return_city' => $returnShopInfo['city'],
-            'return_station_name' => $station['title'],
-            'return_device_ver' => $station['device_ver'],
-    	]);
-    	if(! $ret) {
-    		LOG::ERROR('update order refund no fail');
-    	}
-    	// 更新电池信息
-    	$ret = DB::update('mcs_battery', array('stationid'=>$sid, 'status'=>BATTERY_INSIDE, 'power'=>0), DB::field('id', $battery['id']));
-    	if(!$ret) {
-    		LOG::ERROR('account refund success, but battery db info update fail');
-    	}
+		Log::debug('update order data');
+        $order->save();
 
-    	LOG::DEBUG("Send Weixin Refund template msg!");
-    	$creditsInfo = updateReturnBackCredits($uid);
-    	$wxmsg = array('openid'=>$openid, 'platform'=>$platform, 'orderid'=>$orderid, 'difftime'=>($returnTime-$order['borrow_time']), 'returntime'=>$returnTime, 'usefee'=>$usefee, 'battery'=>$battery_id, 'return_station'=>$station['title'], 'needAdapterFee'=>$needAdapterFee, 'needCableFee'=>$needCableFee, 'new_credit'=>$creditsInfo[0], 'total_credit'=>$creditsInfo[1]);
-    	$type = $platform == PLATFORM_WX ? WX_TEMPLATE : ALIPAY_TEMPLATE;
-    	addMsgToQueue($type, getReturnMsg($wxmsg));
-    	LOG::DEBUG("Refund template Succeed!");
-    	return makeErrorData(ERR_NORMAL, 'update battery info success');
+    	// $wxmsg = array('openid'=>$openid, 'platform'=>$platform, 'orderid'=>$orderid, 'difftime'=>($returnTime-$order['borrow_time']), 'returntime'=>$returnTime, 'usefee'=>$usefee, 'battery'=>$battery_id, 'return_station'=>$station['title'], 'needAdapterFee'=>$needAdapterFee, 'needCableFee'=>$needCableFee, 'new_credit'=>$creditsInfo[0], 'total_credit'=>$creditsInfo[1]);
+    	// $type = $platform == PLATFORM_WX ? WX_TEMPLATE : ALIPAY_TEMPLATE;
+    	// addMsgToQueue($type, getReturnMsg($wxmsg));
+    	// LOG::DEBUG("Refund template Succeed!");
+        return Errors::success("return battery {$battery['id']} ok");
 	}
 
     public function getDeviceStrategy() {
-        $strategy = $this->deviceStrategy;
+        $strategy = $this->deviceStrategy();
         if(empty($strategy)) {
-            $strategy = Settings::get(Settings::DEVICE_STRATEGY);
+            $strategy = Setting::get(Setting::DEVICE_STRATEGY);
         } else {
             $strategy = $strategy['value'];
         }
@@ -379,12 +360,16 @@ class Device extends Model
     }
 
     public function deviceStrategy() {
-        $this->hasOne(DeviceStrategy::class);
+        $this->belongsTo(DeviceStrategy::class);
     }
 
     public function getStationName() {
         if(empty($this->station->name)) {
             return $this->id;
         }
+    }
+
+    public static function pushCmd($deviceId, $cmd) {
+
     }
 }

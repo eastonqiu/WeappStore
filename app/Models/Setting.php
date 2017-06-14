@@ -25,7 +25,15 @@ class Setting extends Model
             switch($key) {
                 case self::DEVICE_STRATEGY:
                     // default
-                    // $value = xxx;
+                    $value = [
+                		"sync_interval"  => "3600", //单位秒
+                		"adv_url"            => "http://7xr4wn.dl1.z0.glb.clouddn.com/kaichang_dev.avi",
+                		"app_version"       => "1",
+                		"app_url"        => "http://" . env('SERVER_DOMAIN', 'test.com'). "/static/apk/mcsclient.apk",
+                		"app_package"    => "com.lingyunstrong.mcsclient",
+                		"app_start_class" => "MainActivity",
+                    ];
+                    $value = json_encode($value);
                     break;
                 case self::FEE_STRATEGY:
                     // default

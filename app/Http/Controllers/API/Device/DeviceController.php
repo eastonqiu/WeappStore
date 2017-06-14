@@ -14,13 +14,13 @@ class DeviceController extends Controller {
 	}
 
 	public function syncSetting(Request $request) {
-		return Device::syncSetting($request->input('mac'));
+		return Device::syncSetting($request->input('mac'), $request->input('device'));
 	}
 
-	public function syncBattery() {
+	public function syncBattery(Request $request) {
 		return Device::syncBattery(
 			$request->input('device_id'),
-			$request->input('device_info'),
+			$request->input('device'),
 			$request->input('batteries')
 		);
 	}

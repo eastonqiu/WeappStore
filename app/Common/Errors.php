@@ -10,10 +10,10 @@ class Errors {
     const INVALID_PARAMS = 4;
 
     public static function error($errcode, $errmsg) {
-        return ['errcode' = > $errcode, 'errmsg' = >$errmsg];
+        return ['errcode' => $errcode, 'errmsg' =>$errmsg];
     }
 
     public static function success($errmsg) {
-        return ['errcode' = > $self::NORMAL, 'errmsg' = >$errmsg];
+        return ['errcode' => $self::NORMAL, 'errmsg' =>$errmsg];
     }
 }

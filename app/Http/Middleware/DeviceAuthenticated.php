@@ -26,7 +26,7 @@ class DeviceAuthenticated
         // check device id or mac
         $device = $request->only('device_id', 'mac');
         if(Device::where('id', $device['device_id'])->orWhere('mac', $device['mac'])->count() == 0) {
-            return response()->json(Errors::error(Errors::DEVICE_INVALID_ID, 'invalid device id or mac'));
+            return response()->json(Errors::error(Errors::INVALID_DEVICE_ID, 'invalid device id or mac'));
         }
         return $next($request);
     }
