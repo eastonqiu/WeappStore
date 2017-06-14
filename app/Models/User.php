@@ -45,7 +45,7 @@ class User extends Authenticatable
     ];
 
     public static function returnDeposit($userId, $platform, $refund, $deposit) {
-        if(in_array($platform, [self::PLATFORM_WX, self::PLATFORM_ALIPAY]) {
+        if(in_array($platform, [self::PLATFORM_WX, self::PLATFORM_ALIPAY])) {
             return User::where('id', $userId)->where('deposit', '>=', $deposit)->update([
                 'balance' => DB::raw('balance + ' . $refund),
                 'deposit' => DB::raw('deposit - ' . $deposit),
