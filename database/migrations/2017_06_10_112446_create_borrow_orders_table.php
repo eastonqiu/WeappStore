@@ -27,8 +27,8 @@ class CreateBorrowOrdersTable extends Migration
             $table->unsignedTinyInteger('sub_status')->default(0)->index();
 
             $table->unsignedBigInteger('battery_id')->default(0)->index();
-            $table->timestamp('borrow_time')->useCurrent();
-            $table->timestamp('return_time')->nullable();
+            $table->unsignedInteger('borrow_time')->default(0);
+            $table->unsignedInteger('return_time')->default(0);
             $table->unsignedInteger('borrow_device_id')->default(0)->index();
             $table->unsignedInteger('return_device_id')->default(0)->index();
             $table->unsignedInteger('borrow_device_ver')->default(0)->index();

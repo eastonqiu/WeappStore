@@ -25,6 +25,8 @@ class BorrowOrder extends Model
 
     // 归还
     const ORDER_STATUS_RETURN = 3;
+    const ORDER_STATUS_DEPOSIT_OUT_NOT_RETURN = 31; // 超时未归还
+    const ORDER_STATUS_DEPOSIT_OUT_RETURN = 32; // 超时归还
 
     // 失败, 故障原因见 sub status
     const ORDER_STATUS_FAIL = 4;

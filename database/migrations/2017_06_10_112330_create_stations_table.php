@@ -17,6 +17,7 @@ class CreateStationsTable extends Migration
             $table->increments('id');
             $table->unsignedInteger('shop_id')->default(0)->index();
             $table->unsignedInteger('station_id')->default(0)->index();
+            $table->string('name');
             $table->string('position');
             $table->unsignedTinyInteger('status')->default(0)->index();
             $table->timestamps();

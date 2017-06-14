@@ -13,6 +13,10 @@ class Shop extends Model
         'id', 'created_at', 'updated_at', 'deleted_at'
     ];
 
+    public function stations() {
+        return $this->hasMany(Station:class);
+    }
+
     public function feeStrategy() {
         return $this->hasOne(FeeStrategy::class);
     }

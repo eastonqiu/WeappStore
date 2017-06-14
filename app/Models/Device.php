@@ -15,6 +15,10 @@ class Device extends Model
         'id', 'created_at', 'orderid', 'updated_at', 'deleted_at'
     ];
 
+    public function station() {
+        return $this->belongsTo(Station::class);
+    }
+
     public static function syncSetting($mac, $deviceInfo) {
         $device = Device::where('mac', $mac)->first();
         $device['last_sync'] = date("y-m-d H:i:s",time());
@@ -182,7 +186,7 @@ class Device extends Model
                 // 确认借出失败: 库存回滚, 退还押金到账户余额
                 Log::warning("{$orderid} fail status: {$status}");
                 // 用户账号退款
-                if(empty(User::refundForFailOrder($order['user_id'], $order['platform'], $order['price']))) {
+                if(empty(User::returnDeposit($order['user_id'], $order['platform'], $order['price'], $order['price']))) {
                     return Errors::error(Errors::USER_ACCOUNT_REFUND_FAIL, 'user account refund fail');
                 }
 
@@ -205,7 +209,7 @@ class Device extends Model
                 $order['return_station_id'] = $order['borrow_station_id'];
                 $order['return_shop_id'] = $order['borrow_shop_id'];
                 $order['return_station_name'] = $order['borrow_station_name'];
-                $order['return_time'] = date("y-m-d H:i:s",time());
+                $order['return_time'] = time();
                 $order->save();
 
                 Log::debug("update order {$orderid}");
@@ -252,57 +256,35 @@ class Device extends Model
     		Log::debug("return back repeated request {$battery['id']}, $orderid");
     		return Errors::success("repeated request {$battery['id']}, $orderid");
     	}
-    	$order = $mcs_tradelog->fetch($orderid);
-    	$uid = $order['customer'];
-    	$battery_id = $order['battery_id'];
-    	$platform = $order['platform'];
-    	$openid = $order['buyercontact'];
+
+        $device = Device::find($deviceId);
 
     	// 过滤重复归还
-    	if(! in_array($order['status'], [ORDER_STATUS_RENT_CONFIRM, ORDER_STATUS_RENT_CONFIRM_FIRST, ORDER_STATUS_RETURN_REMIND])) {
-    		// 判断是否是相邻的请求 socket timeout 导致, 时间间隔为20s, 若是，则直接返回成功
-    		LOG::ERROR("the status of order:" . $orderid . " is wrong: " . $order['status']);
-    		C::t('#mcs#mcs_battery')->update($battery['id'], array('status'=>BATTERY_INSIDE));
-    		LOG::DEBUG('correct battery status, inside station');
-    		if (in_array($order['status'], [ORDER_STATUS_TIMEOUT_NOT_RETURN])) {
-    			$orderMsg = unserialize($order['message']);
-    			// $orderMsg['return_station'] = C::t('#mcs#mcs_station')->getTitle($sid);
-                $orderMsg['return_station'] = $station['title'];
-    			$returnTime = date("y-m-d H:i:s",time());
-    			C::t('#mcs#mcs_tradelog')->update($orderid, [
-    				'status'=>ORDER_STATUS_TIMEOUT_CANT_RETURN,
-    				'return_station'=>$sid,
-    				'return_shop_station_id'=>$returnShopStationId,
-    				'return_time'=>$returnTime,
-    				'message'=>serialize($orderMsg),
-    				'lastupdate'=>time(),
-                    'return_shop_id' => $returnShopStationInfo['shopid'],
-                    'return_station_name' => $station['title'],
-                    'return_city' => $returnShopInfo['city'],
-                    'return_device_ver' => $station['device_ver'],
-    			]);
-    			$wxmsg = array('openid'=>$openid, 'platform'=>$platform, 'orderid'=>$orderid, 'difftime'=>($returnTime-$order['borrow_time']), 'returntime'=>$returnTime, 'usefee'=>$order['usefee'], 'battery'=>$battery['id'], 'return_station'=>$station['title'], 'needAdapterFee'=> 0, 'needCableFee'=> 0);
-    			$type = $platform == PLATFORM_WX ? WX_TEMPLATE : ALIPAY_TEMPLATE;
-    			addMsgToQueue($type, getReturnMsg($wxmsg));
-    			return makeErrorData(ERR_NORMAL, 'deposit reduced, can not return');
+    	if($order['status'] != BorrowOrder::ORDER_STATUS_BORROW_CONFIRM) {
+    		Log::error("the status of order:" . $orderid . " is wrong: " . $order['status']);
+            $battery['status'] = BATTERY::BATTERY_INSIDE;
+            $battery->save();
+    		Log::debug('correct battery status, inside station');
+    		if ($order['sub_status'] == BorrowOrder::ORDER_STATUS_DEPOSIT_OUT_NOT_RETURN]) {
+                $order['sub_status'] = BorrowOrder::ORDER_STATUS_DEPOSIT_OUT_RETURN;
+                $order['return_device_id'] = $deviceId;
+                $order['return_device_ver'] = $device['device_ver'];
+                $order['return_station_id'] = $device->station->id ? : 0;
+                $order['return_shop_id'] = $device->station->->shop->id ? 0;
+                $order['return_station_name'] = $device->getStationName();
+                $order['return_time'] = time();
+
+    			// $wxmsg = array('openid'=>$openid, 'platform'=>$platform, 'orderid'=>$orderid, 'difftime'=>($returnTime-$order['borrow_time']), 'returntime'=>$returnTime, 'usefee'=>$order['usefee'], 'battery'=>$battery['id'], 'return_station'=>$station['title'], 'needAdapterFee'=> 0, 'needCableFee'=> 0);
+    			// $type = $platform == PLATFORM_WX ? WX_TEMPLATE : ALIPAY_TEMPLATE;
+    			// addMsgToQueue($type, getReturnMsg($wxmsg));
+    			return Errors::success('deposit reduced, can not return');
     		}
-    		return makeErrorData(ERR_NORMAL, 'error status, correct it success');
+    		return Errors::success('error status, correct it success');
     	}
 
-    	$orderMsg = unserialize($order['message']);
-
-    	// $orderMsg['battery_data']['return_slot'] = $batteryInfo['slot'];
+    	$orderMsg = json_decode($order['msg'], true);
     	$orderMsg['battery_return'] = $batteryInfo;
-    	// 订单带有充电头，但归还时却没有附带充电头，此时需要扣除充电头费用
-    	$needAdapterFee = 0;
-    	$needCableFee = 0;
-    	$attachstatus = getAttachStatus($sid);
-    	if(getAdapterFeeSetting($attachstatus) && isset($batteryInfo['adapter']) && empty($batteryInfo['adapter'])) {
-    		$needAdapterFee = 1;
-    	}
-    	if(getCableFeeSetting($attachstatus) && isset($batteryInfo['cable']) && empty($batteryInfo['cable'])) {
-    		$needCableFee = 1;
-    	}
+
     	// 带归还时间验证, 单位为秒 数字长度为10, 长度为13是设备端传过来了单位为毫秒的, 这里进行规避
     	if(! is_numeric($batteryInfo['time'])) {
     		$batteryInfo['time'] = 0;
@@ -312,36 +294,23 @@ class Device extends Model
     	}
     	// 归还时间不能大于当前时间或者小于借出时间, 否则为非法, 采用当前时间归还
     	$returnTime = (empty($batteryInfo['time']) || ($batteryInfo['time'] > time()) || ($batteryInfo['time'] < $order['borrow_time'])) ? time() : $batteryInfo['time'];
-    	$orderMsg['return_station'] = $station['title'];
-    	if($orderReturnStatus != ORDER_STATUS_RETURN_EXCEPTION_SYS_REFUND) {
-    		$usefee = calcFee($order['orderid'], $order['borrow_time'], $returnTime, $needAdapterFee, $needCableFee);
-    	} else {
-    		LOG::DEBUG("$orderid battery exception, usefee 0");
-    		$usefee = 0;
-    	}
+
+    	$usefee = calcFee($order['orderid'], $order['borrow_time'], $returnTime, $needAdapterFee, $needCableFee);
     	if($usefee > $order['price'])
     		$usefee = $order['price'];
 
-    	$isZhima = $order['platform'] == PLATFORM_ZHIMA;
-    	$orderMsg['refund_fee'] = $isZhima ? 0 : $order['price'] - $usefee;
-    	LOG::DEBUG('zhima order: ' . $isZhima);
-    	LOG::DEBUG('price:' . $order['price'] . ', usefee:' . $usefee . ', refund:' . $orderMsg['refund_fee']);
-    	LOG::DEBUG('start to refund to user account, refund:' . $orderMsg['refund_fee']);
+        $returnDeposit = $order['price'] - $usefee;
+        Log::debug('price:' . $order['price'] . ', usefee:' . $usefee);
+    	Log::debug('start to refund to user account, refund:' . $orderMsg['refund_fee']);
 
-    	if(! $isZhima) {
-    		// 退款
-    		if(C::t('#mcs#mcs_user')->returnBack($uid, $orderMsg['refund_fee'], $order['price'])) {
-    			LOG::DEBUG('refund from user account successfully');
-    		} else {
-    			LOG::ERROR("Refund Failed!, ret " . print_r($ret, true));
-    			return makeErrorData(ERR_SERVER_BUSINESS_ERROR, 'refund fail, deposit can not return');
-    		}
-    	} else {
-    		// 更新芝麻信用订单, 待结算
-    		C::t('#mcs#mcs_trade_zhima')->update($orderid, ['status' => ZHIMA_ORDER_COMPLETE_WAIT, 'update_time'=>time()]);
-    		LOG::DEBUG('return back, update zhima order waitting for complete, orderid: ' . $orderid);
-    	}
+        // 退款给用户
+        if(empty(User::returnDeposit($order['user_id'], $order['platform'], $returnDeposit, $order['price']))) {
+            Log::error('return deposit to user account fail');
+            return Errors::error(Errors::USER_ACCOUNT_REFUND_FAIL, 'user account deposit return fail');
+        }
+        Log::debug('return deposit to user account ok');
 
+        // 更新订单状态
     	if($usefee >= $order['price']) {
     		LOG::DEBUG('borrow too long time, desposit not enough, refund: ' . $orderMsg['refund_fee']);
     		$updateStatus = $orderReturnStatus == ORDER_STATUS_RETURN ? ORDER_STATUS_TIMEOUT_CANT_RETURN : $orderReturnStatus;
@@ -411,5 +380,11 @@ class Device extends Model
 
     public function deviceStrategy() {
         $this->hasOne(DeviceStrategy::class);
+    }
+
+    public function getStationName() {
+        if(empty($this->station->name)) {
+            return $this->id;
+        }
     }
 }

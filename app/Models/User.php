@@ -44,10 +44,11 @@ class User extends Authenticatable
         'password' => 'required'
     ];
 
-    public static function refundForFailOrder($userId, $platform, $deposit) {
+    public static function returnDeposit($userId, $platform, $refund, $deposit) {
         if(in_array($platform, [self::PLATFORM_WX, self::PLATFORM_ALIPAY]) {
             return User::where('id', $userId)->where('deposit', '>=', $deposit)->update([
-                'balance' => DB::raw('balance + ' . $deposit)
+                'balance' => DB::raw('balance + ' . $refund),
+                'deposit' => DB::raw('deposit - ' . $deposit),
             ]);
         } else {
             // 芝麻信用
