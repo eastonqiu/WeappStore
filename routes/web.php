@@ -23,8 +23,12 @@ Auth::routes();
 
 Route::any('wechat', 'WechatController@serve');
 
-Route::group(['middleware' => ['web', 'wechat.oauth']], function () {
-	Route::get('wechat_auth', 'WechatController@auth');
+// Route::group(['middleware' => ['web', 'wechat.oauth']], function () {
+// 	Route::get('wechat_auth', 'WechatController@auth');
+// });
+
+Route::group(['middleware' => ['web.user']], function () {
+    Route::get('/borrow', 'BorrowController@borrow');
 });
 
 Route::group(['prefix' => 'admin', 'middleware'=>'auth', 'namespace' => 'Admin'], function () {

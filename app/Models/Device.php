@@ -47,7 +47,7 @@ class Device extends Model
 
             // 更新电池信息
             if(! empty($battery['id'])) {
-                Battery::firstOrCreate(['id', $battery['id']])->update([
+                Battery::firstOrCreate(['id' => $battery['id']])->update([
                     'id' => $battery['id'],
                     'device_id' => $battery['device_id'],
                     'slot' => $battery['slot'],
@@ -62,7 +62,7 @@ class Device extends Model
             // 更新槽位信息
             Slot::firstOrCreate(['device_id' => $deviceId, 'slot' => $battery['slot']])->update([
                 'battery_id' => $battery['id'],
-                'status' => $battery['status'],
+                // 'status' => $battery['status'],
                 'last_sync' => date("y-m-d H:i:s",time()),
             ]);
         }
@@ -74,8 +74,9 @@ class Device extends Model
         $device = Device::find($deviceId);
 
         foreach ($batteries as $battery) {
-            Battery::where(['id', $battery['id']])->update([
+            Battery::where(['id' => $battery['id']])->update([
                 'device_id' => 0,
+                'status' => Battery::BATTERY_OUTSIDE,
             ]);
 
             Slot::firstOrCreate(['device_id' => $deviceId, 'slot' => $battery['slot']])->update([
@@ -84,7 +85,7 @@ class Device extends Model
             ]);
         }
 
-        return Errors::success('sync battery successfully');
+        return Errors::success('remove battery successfully');
 	}
 
 	public static function borrowConfirm($deviceId, $orderid, $borrowBattery, $status) {

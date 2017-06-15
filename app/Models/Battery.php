@@ -10,7 +10,7 @@ class Battery extends Model
 	use SoftDeletes;
 
     protected $guarded = [
-        'id', 'created_at', 'updated_at', 'deleted_at'
+        'created_at', 'updated_at', 'deleted_at'
     ];
 
 	const BATTERY_INSIDE = 0;

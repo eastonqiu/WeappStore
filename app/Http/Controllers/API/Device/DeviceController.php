@@ -25,26 +25,34 @@ class DeviceController extends Controller {
 		);
 	}
 
-	public function removeBattery() {
-		return Device::syncBattery(
+	public function removeBattery(Request $request) {
+		return Device::removeBattery(
 			$request->input('device_id'),
-			$request->input('$batteries')
+			$request->input('batteries')
 		);
 	}
 
-	public function getLogsToken() {
+	public function borrowConfirm(Request $request) {
+		return Device::borrowConfirm(
+			$request->input('device_id'),
+			$request->input('orderid'),
+			$request->input('battery'),
+			$request->input('status')
+		);
+	}
+
+	public function returnBack(Request $request) {
+		return  Device::returnBack(
+			$request->input('device_id'),
+			$request->input('battery')
+		);
+	}
+
+	public function pushCommand(Request $request) {
 		return [1,2];
 	}
 
-	public function borrowConfirm() {
-		return [1,2];
-	}
-
-	public function returnBack() {
-		return [1,2];
-	}
-
-	public function pushCommand() {
+	public function getLogsToken(Request $request) {
 		return [1,2];
 	}
 }
