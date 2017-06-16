@@ -12,7 +12,7 @@ class User extends Authenticatable
     use Notifiable;
     use EntrustUserTrait;
 
-    const PLATFORM_WX = 1;
+    const PLATFORM_WECHAT = 1;
     const PLATFORM_ALIPAY = 2;
     const PLATFORM_ZHIMA = 3;
 

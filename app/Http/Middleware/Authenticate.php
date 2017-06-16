@@ -6,6 +6,7 @@ use Closure;
 use App\Models\Device;
 use Dingo\Api\Routing\Helpers;
 use App\Common\Errors;
+use App\Models\User;
 
 class Authenticate
 {
@@ -19,8 +20,11 @@ class Authenticate
      * @param  string|null  $guard
      * @return mixed
      */
-    public function handle($request, Closure $next, $guard = null)
-    {
+    public function handle($request, Closure $next, $guard = null) {
+        if(! empty(session('user'))) {
+            return $next($request);
+        }
+
         $wechatUser = session('wechat.oauth_user'); // 拿到授权用户资料
         if(empty($wechatUser)) {
             return response(view('auth.fail'));
@@ -38,7 +42,7 @@ class Authenticate
                 'password' => bcrypt(str_random(20)),
                 'email' => str_random(20),
                 'openid' => $wechatUser->id,
-                'platform' => WechatController::PLATFORM_WECHAT,
+                'platform' => User::PLATFORM_WECHAT,
                 'nickname' => $wechatUser->nickname,
                 'avatar' => $wechatUser->avatar,
                 'sex' => $wechatUser->original['sex'],
@@ -49,7 +53,7 @@ class Authenticate
             $user = User::create($user);
         }
 
-        session(["user", $user]);
+        session(["user" => $user]);
 
         return $next($request);
     }

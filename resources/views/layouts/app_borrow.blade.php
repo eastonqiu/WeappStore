@@ -11,16 +11,14 @@
 <!-- end 不缓存 -->
 <meta name="format-detection" content="telephone=no" />
 <title>充电宝租赁</title>
-<link rel="stylesheet" href="{APPROOT}static/reset.css" type="text/css" media="all">
-<link rel="stylesheet" href="{APPROOT}static/style.css" type="text/css" media="all">
+<link rel="stylesheet" href="/css/reset.css" type="text/css" media="all">
+<link rel="stylesheet" href="/css/style.css" type="text/css" media="all">
 
-<link rel="stylesheet" href="{APPROOT}static/mystyle.css?rand={echo rand(1000,50000);}&v=2">
+<link rel="stylesheet" href="/css/mystyle.css?rand=<?php echo rand(1000,50000);?>">
 
-<script src="{DZSTATICURL}js/mobile/jquery-1.8.3.min.js?{VERHASH}"></script>
-
-<script src="{DZSTATICURL}js/mobile/common.js?{VERHASH}" charset="{CHARSET}"></script>
+<script src="/js/vendor/jquery-1.12.0.min.js"></script>
 <script src="http://res.wx.qq.com/open/js/jweixin-1.0.0.js"></script>
-<script src="{APPROOT}static/common.js" charset="{CHARSET}"></script>
+
 <script>
     window.Laravel = <?php echo json_encode([
         'csrfToken' => csrf_token(),
@@ -36,7 +34,8 @@ function isWeiXin(){
 	}
 }
 
-	var jsApiParameters = {echo $jsApiParameters?:'null';};
+	// var jsApiParameters = <?php echo $jsApiParameters?:'null';?>;
+    var jsApiParameters = 0;
 	function jsApiCall() {
 		jsApiParameters = eval('(' + jsApiParameters + ')');
 		WeixinJSBridge.invoke(

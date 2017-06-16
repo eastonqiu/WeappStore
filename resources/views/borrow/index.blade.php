@@ -5,63 +5,18 @@
 <div class="shop-pay-main">
 	<div class="shop-pay-content">
 		<div class="icon-shopmoney">
-		<!--{if $platform == PLATFORM_WX}-->
-			<h4><img src="static/images/icon-shopMoney.png"/></h4>
-		<!--{else}-->
-			<!--支付宝图标-->
-			<h4><img src="static/images/alipay.png" style="border:none;"/></h4>
-		<!--{/if}-->
+			<h4><img src="/images/icon-shopMoney.png"/></h4>
 		</div>
 		<div class="pay-text">
-		<!--{if $platform == PLATFORM_WX}-->
-			<!--{if $usablemoney > 0}-->
-				<h4>您的押金余额为<em>{$usablemoney}</em>元</h4>
-			<!--{/if}-->
-			<!--{if round($usablemoney,2) >= round($costPrice - BATTERY_DEPOSIT_DIFF, 2)}-->
-				<h3>可直接租借</h3>
-			<!--{elseif $usablemoney == 0}-->
-				<span>需支付押金</span>
-				<h2>{$costPrice}元</h2>
-			<!--{else}-->
-				<h3>需要补足押金<em>{eval echo round($costPrice-$usablemoney,2);}</em>元</h3>
-			<!--{/if}-->
-		<!--{else}-->
-			<!--支付宝状态-->
-			<h3>信用借还&nbsp;&nbsp;免押金借用充电宝</h3>
-		<!--{/if}-->
-
+			<span>需支付押金</span>
+			<h2>100元</h2>
 		</div>
 		<!--余额借用内容显示-->
 		<div class="lease-pay-btn">
 		<h4>充电宝自带充电线，请选择所需的接口类型</h4>
-		<!--{loop $batteryCat $item}-->
-			<!--{loop $battery_count $cableType $cableCount}-->
-				<!--{if $cableType == APPLE_ANDROID_CABLE}-->
-					<!--{if $cableCount > 0}-->
-						<!--{if $platform != PLATFORM_ALIPAY}-->
-						  <a onclick="paydirect2({$item['tid']}, {BATTERY_DEFAULT_FLAVOR}, {APPLE_ANDROID_CABLE})" href="javascript:;">
-						  	<i class="icon-iphone"></i>苹果/安卓
-						  </a>
-						<!--{else}-->
-						  <a onclick="paydirect2({$item['tid']}, {BATTERY_DEFAULT_FLAVOR}, {APPLE_ANDROID_CABLE}, true)" href="javascript:;"><i class="icon-iphone"></i>苹果/安卓</a>
-						<!--{/if}-->
-					<!--{else}-->
-						  <a href="javascript:;" class="shop-pay-disabled"><i class="icon-iphone"></i>苹果/安卓</a>
-					<!--{/if}-->
-				<!--{elseif $cableType == TYPEC_CABLE}-->
-					<!--{if $cableCount > 0}-->
-						<!--{if $platform != PLATFORM_ALIPAY}-->
-						<a onclick="paydirect2({$item['tid']}, {BATTERY_DEFAULT_FLAVOR}, {TYPEC_CABLE})"  href="javascript:;"><i class="icon-key"></i>Type-C</a>
-						<!--{else}-->
-						<a onclick="paydirect2({$item['tid']}, {BATTERY_DEFAULT_FLAVOR}, {TYPEC_CABLE}, true)" href="javascript:;"><i class="icon-key"></i>Type-C</a>
-						<!--{/if}-->
-					<!--{else}-->
-						<a href="javascript:;" class="shop-pay-disabled"><i class="icon-key"></i>Type-C</a>
-					<!--{/if}-->
-				<!--{else}-->
-				<!--{/if}-->
-			<!--{/loop}-->
-		<!--{/loop}-->
+		<a onclick="pay({$item['tid']})" href="javascript:;">
+		  	<i class="icon-iphone"></i>苹果/安卓
+		</a>
 		</div>
 	</div>
 	<div class="shop-pay-footer">
@@ -69,22 +24,19 @@
 			<span>温馨提示</span>
 		</h4>
 		<ul>
-			<!--{if $platform != PLATFORM_ALIPAY}-->
-			<li><span>1. 云充吧充电宝借出后，{$feeStr}</span></li>
+			<li><span>1. 云充吧充电宝借出后，...</span></li>
 			<li><span>2. 云充吧充电宝归还后，用户可在用户中心查看押金余额。</span></li>
-			<!--{else}-->
-			<li><span>云充吧充电宝借出后，{$feeStr}</span></li>
-			<!--{/if}-->
+			<li><span>云充吧充电宝借出后，...</span></li>
 		</ul>
 	</div>
 	<!-- loading图 -->
 	<div class="shop-index-loading">
-		<img id="loading_img" src="static/loading.gif"/>
+		<img id="loading_img" src="/images/loading.gif"/>
 	</div>
 	<!--设备被占用状态-->
 	<div class="occupied-bg">
 		<div class="occupied-status">
-			<h4><img src="static/images/icon-waitting .gif"/></h4>
+			<h4><img src="/images/icon-waitting .gif"/></h4>
 			<span>请稍后</span>
 			<!-- <div class="occupied-close"><a href="javascript:;">关闭</a></div> -->
 		</div>
@@ -94,7 +46,7 @@
 	<div class="Withdrawals-log-bg">
 		<div class="Withdrawals-log">
 			<div class="mask-close-btn"><i></i></div>
-			<div class="Withdrawals-img"><img src="static/images/prompt-bg.png"/></div>
+			<div class="Withdrawals-img"><img src="/images/prompt-bg.png"/></div>
 			<p>您有租借中的充电宝，无法继续租借</p>
 			<div class="Withdrawals-log-btn">
 				<a href="/index.php?mod=shop&act=showorder">查看租借记录</a>
@@ -102,10 +54,7 @@
 		</div>
 	</div>
 </div>
-<!--
-<script src="{APPROOT}static/jquery.blockUI.js"></script>
-<link rel="stylesheet" href="{APPROOT}static/jquery-ui.css">
--->
+
 <script>
 	$(".occupied-close a").click(function(){
 		$(".occupied-bg").css("display","none");
@@ -114,7 +63,7 @@
 		$(".Withdrawals-log-bg").css("display","none");
 	});
 
-	function paydirect2(itemId, flavor, cable, zhima) {
+	function pay(itemId, flavor, cable, zhima) {
 		/*$.blockUI({
 			overlayCSS:{'backgroundColor':'0xFF'},
 			message: $("#loading_img"),
