@@ -42,8 +42,8 @@ class CreateBorrowOrdersTable extends Migration
             $table->string('borrow_station_name')->default('');
             $table->string('return_station_name')->default('');
 
-            $table->text('fee_strategy');
-            $table->text('msg');
+            $table->text('fee_strategy')->nullable();
+            $table->text('msg')->nullable();
 
             $table->unsignedInteger('refund_no')->default(0);
             $table->unsignedInteger('refundable')->default(0);

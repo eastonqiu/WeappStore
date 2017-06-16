@@ -371,9 +371,11 @@ class Device extends Model
         if(empty($this->station->name)) {
             return $this->id;
         }
+        return $this->station->name;
     }
 
     public static function pushCmd($deviceId, $cmd, array $msg) {
+        Log::debug("push cmd {$cmd} to {$deviceId} msg:" . json_encode($msg));
         $msg['msg_id'] = microtime(true);
     	$msg['sid'] = $sid;
         // jpush or other push
@@ -387,6 +389,6 @@ class Device extends Model
         是否有库存
     */
     public static function hasStock($deviceId) {
-        return Device::find($deviceId)->usable > 0 ?
+        return Device::find($deviceId)->usable > 0;
     }
 }

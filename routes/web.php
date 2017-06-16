@@ -29,7 +29,7 @@ Route::any('pay_notify', 'WechatController@payNotify');
 // });
 
 Route::group(['prefix' => 'borrow', 'middleware' => ['web.user']], function () {
-    Route::get('/', 'BorrowController@index');
+    Route::get('/{deviceId}', 'BorrowController@index')->where('deviceId', '[0-9]+');;
     Route::get('/order', 'BorrowController@order');
 });
 

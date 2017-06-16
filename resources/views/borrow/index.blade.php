@@ -14,7 +14,7 @@
 		<!--余额借用内容显示-->
 		<div class="lease-pay-btn">
 		<h4>充电宝自带充电线，请选择所需的接口类型</h4>
-		<a onclick="pay({$item['tid']})" href="javascript:;">
+		<a onclick="pay({{ $dId }}, {{ $pId }})" href="javascript:;">
 		  	<i class="icon-iphone"></i>确认支付
 		</a>
 		</div>
@@ -63,9 +63,9 @@
 		$(".Withdrawals-log-bg").css("display","none");
 	});
 
-	function pay(itemId) {
+	function pay(dId, pId) {
 		$(".loading-box").css("display","block");
-		var url = "/borrow/order?d_id={$d_id}&p_id=";
+		var url = "/borrow/order?dId=" + dId + "&pId=" + pId;
 		$.ajax({
 			url: url,
 			type: 'GET',
@@ -75,8 +75,6 @@
 					if(data.pay_type == 1) {
 						//alert("押金已从账户余额中扣取,请取充电柜上的电池, 谢谢!");
 						$(".shop-index-loading").css("display","none");
-						var psurl = "/wxpay.php";
-						window.location.href=psurl+"?app=mcs&mod=wxpay&paymod=index&act=pay_success";
 						return;
 					} else if(data.pay_type == 0) {
 						// $.unblockUI();
@@ -88,23 +86,6 @@
 				} else if(data.errcode == 1) {
 					$(".occupied-bg").css("display","block");
 					$(".shop-index-loading").css("display","none");
-					timer = setInterval(function() {
-						$.ajax({
-							url: '/index.php?mod=api&act=user&opt=check_station_online',
-							data: {qid: $qid},
-						})
-						.done(function(data) {
-							console.log("success");
-							if(data.code == 0) {
-				                clearInterval(timer);
-								$(".occupied-bg").css("display","none");
-				                return;
-							}
-						})
-						.fail(function() {
-							console.log("error");
-						});
-					}, 1000);
 					//$.unblockUI();
 				} else if(data.errcode ==2 ){
 					// alert("您有正在进行的租借服务，请先归还充电宝后再次尝试，谢谢。")
