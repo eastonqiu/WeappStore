@@ -15,7 +15,7 @@
 		<div class="lease-pay-btn">
 		<h4>充电宝自带充电线，请选择所需的接口类型</h4>
 		<a onclick="pay({$item['tid']})" href="javascript:;">
-		  	<i class="icon-iphone"></i>苹果/安卓
+		  	<i class="icon-iphone"></i>确认支付
 		</a>
 		</div>
 	</div>
@@ -24,9 +24,9 @@
 			<span>温馨提示</span>
 		</h4>
 		<ul>
-			<li><span>1. 云充吧充电宝借出后，...</span></li>
-			<li><span>2. 云充吧充电宝归还后，用户可在用户中心查看押金余额。</span></li>
-			<li><span>云充吧充电宝借出后，...</span></li>
+			<li><span>1. 充电宝借出后，...</span></li>
+			<li><span>2. 充电宝归还后，用户可在用户中心查看押金余额。</span></li>
+			<li><span>充电宝借出后，...</span></li>
 		</ul>
 	</div>
 	<!-- loading图 -->
@@ -63,15 +63,9 @@
 		$(".Withdrawals-log-bg").css("display","none");
 	});
 
-	function pay(itemId, flavor, cable, zhima) {
-		/*$.blockUI({
-			overlayCSS:{'backgroundColor':'0xFF'},
-			message: $("#loading_img"),
-			css:{'background':'transparent', 'border':'none',}
-		});*/
+	function pay(itemId) {
 		$(".loading-box").css("display","block");
-		var zm = typeof(zhima) != "undefined" ? "&zm=true":"";
-		var url = "{ROOT}wxpay.php?qid={$qid}&submit=paydirect&formhash={FORMHASH}&itemid=" + itemId + "&flavor=" + flavor + '&cableType=' + cable + zm ;
+		var url = "/borrow/order?d_id={$d_id}&p_id=";
 		$.ajax({
 			url: url,
 			type: 'GET',

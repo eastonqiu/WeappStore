@@ -15,6 +15,9 @@ class Device extends Model
         'id', 'created_at', 'orderid', 'updated_at', 'deleted_at'
     ];
 
+    const PUSH_BORROW_BATTERY = 1;
+    const PUSH_POPUP_SLOT = 2;
+
     public function station() {
         return $this->belongsTo(Station::class);
     }
@@ -370,7 +373,20 @@ class Device extends Model
         }
     }
 
-    public static function pushCmd($deviceId, $cmd) {
+    public static function pushCmd($deviceId, $cmd, array $msg) {
+        $msg['msg_id'] = microtime(true);
+    	$msg['sid'] = $sid;
+        // jpush or other push
+    }
 
+    public static function borrow($deviceId, $orderid) {
+        self::pushCmd($deviceId, ['orderid'=>$orderid]);
+    }
+
+    /*
+        是否有库存
+    */
+    public static function hasStock($deviceId) {
+        return Device::find($deviceId)->usable > 0 ?
     }
 }

@@ -4,12 +4,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use app\Common\Errors;
+use EasyWeChat;
+use EasyWeChat\Payment\Order;
 
 class BorrowOrder extends Model
 {
     use SoftDeletes;
 
     protected $primaryKey = 'orderid';
+
+    const PRODUCT_LIST = [
+        '1' => ['name' => '充电宝', 'price' => 10000], // 单位是分
+    ];
 
     protected $guarded = [
         'id', 'refund_no', 'refundable', 'created_at', 'updated_at', 'deleted_at'
@@ -36,14 +43,13 @@ class BorrowOrder extends Model
         42 => '电机故障',
     ];
 
+    // 提现退款相关
+    const ORDER_CANT_REFUND = -1; // 账户内支付, 没有产生平台订单, 无法用于退款
+    const ORDER_REFUND_FINISH = -2; // 此订单金额已全部退款
+
 
     /*
-		订单更新幂等性检查, 保证多次请求的结果和一次请求的结果是一致的
-		即短时间内并发多次更新, 只能有一次更新是有效的, 防止多次更新造成的一系列错误问题
-		解决由于前端多次触发或由于网络重试导致的多次更新问题
-		通过lastupdate的更新锁来实现, 3s内并发的请求均视为同一个请求
-		可用于支付回调,借出确认,归还等等订单更新的场景
-		返回是否合法, 即可是否可继续往下执行
+		幂等性检查, 多次请求的结果和一次请求的结果是一致的
 	*/
 	public static function idempotent($orderid)
 	{
@@ -52,5 +58,85 @@ class BorrowOrder extends Model
                 ->update(['updated_at' => date("y-m-d H:i:s",time())];
 	}
 
+    public static function createOrder($userId, $productId, $deviceId, $platform = User::PLATFORM_WECHAT) {
+        // 判断是否有库存
+        if(! Device::hasStock($deviceId)) {
+            Log::debug("{$deviceId} stock not enough");
+            return Errors::error(Errors::ORDER_STOCK_NO_ENOUGH, "pay by account");
+        }
+
+        $price = self::PRODUCT_LIST[$productId]['price'];
+        $user = User::find($userId);
+        Log::debug("{$user['id']} (balance: {$user['balance']}) prepare to borrow {$productId} (price: {$price}) in {$deviceId}");
+
+        $needPay = true;
+
+        $orderid = self::_generateOrderId();
+        $order = BorrorwOrder::create([
+			'orderid' => $orderid,
+            'user_id' => $userId,
+            'openid' => $user['openid'],
+            'platform' => $platform,
+			'price' => $price,
+            'product_id' => $productId,
+			'status' => self::ORDER_STATUS_WAIT_PAY,
+			'borrow_device_id' => $deviceId,
+			'borrow_station_id' => $shopStationInfo['id'],
+            'borrow_shop_id' => $shopStationInfo['shopid'],
+            'borrow_device_ver' => $stationInfo['device_ver'],
+            'borrow_station_name'  => $stationInfo['title'],
+            'borrow_time' => time()
+		]);
+
+        // 直接账户内支付
+        if(User::pay($userId, $price)) {
+            $needPay = false;
+            $order['refund_no'] = self::ORDER_CANT_REFUND;
+            $order['status'] = self::ORDER_STATUS_PAID;
+            $order->save();
+            Log::debug('pay by account balance money');
+
+            // 给设备推送 借命令
+            Device::borrow($deviceId, $orderid);
+            return Errors::error(Errors::ORDER_PAY_BY_ACCOUNT, "pay by account");
+        }
+
+        $price = $price - $user['balance'];
+        Log::debug("{$user['id']} need pay {$price}");
+        // 调用微信支付统一下单
+
+        $payment = EasyWeChat::$payment;
+        $wechatOrder = new Order([
+            'trade_type'       => 'JSAPI', // JSAPI，NATIVE，APP...
+            'body'             => self::PRODUCT_LIST[$productId]['name'],
+            'detail'           => self::PRODUCT_LIST[$productId]['name'],
+            'out_trade_no'     => $orderid,
+            'total_fee'        => $price, // 单位：分
+            'notify_url'       => SERVER_DOMAIN . "/pay_notify", // 支付结果通知网址，如果不设置则会使用配置里的默认地址
+            'openid'           => $user['openid'], // trade_type=JSAPI，此参数必传，用户在商户appid下的唯一标识，
+            // ...
+        ]);
+
+        $result = $payment->prepare($wechatOrder);
+        if ($result->return_code == 'SUCCESS' && $result->result_code == 'SUCCESS'){
+            $prepayId = $result->prepay_id;
+            return Errors::error(Errors::ORDER_PAY_NEW, $prepayId);
+        } else {
+            Log::error("wechat unify order fail: return code: {$result->return_code}, result code: {$result->result_code}");
+            return Errors::error(Errors::ORDER_WECHAT_ORDER_FAIL, "wechat unify order fail");
+        }
+    }
+
+    private static function _generateOrderId() {
+        $date = getdate(time());
+		$year = $date['year'];
+        $mon = $date['mon'];
+        $mday = $date['mday'];
+		$h = $date['hours'];
+        $m = $date['minutes'];
+        $s = $date['seconds'];
+		$sn = rand(1, 99999);
+		$orderid = sprintf("FTJ-%u%02u%02u-%02u%02u%02u-%05u", $year, $mon, $mday, $h, $m, $s, $sn);
+    }
 
 }

@@ -9,6 +9,11 @@ class Errors {
     const INVALID_BATTERY_ID = 3; //电池ID不合法
     const INVALID_PARAMS = 4; // 参数不合法
 
+    const ORDER_PAY_BY_ACCOUNT = 5; // 账户内支付
+    const ORDER_PAY_NEW = 6; // 产生新的支付
+    const ORDER_STOCK_NO_ENOUGH = 7; // 库存不足
+    const ORDER_WECHAT_ORDER_FAIL = 8; // 微信统一下单失败
+
     public static function error($errcode, $errmsg) {
         return ['errcode' => $errcode, 'errmsg' =>$errmsg];
     }

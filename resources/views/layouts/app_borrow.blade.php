@@ -34,7 +34,7 @@ function isWeiXin(){
 	}
 }
 
-	// var jsApiParameters = <?php echo $jsApiParameters?:'null';?>;
+	// var jsApiParameters = <?php echo empty($jsApiParameters)? 'null' : $jsApiParameters;?>;
     var jsApiParameters = 0;
 	function jsApiCall() {
 		jsApiParameters = eval('(' + jsApiParameters + ')');

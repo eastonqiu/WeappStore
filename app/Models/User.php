@@ -55,4 +55,11 @@ class User extends Authenticatable
             return false;
         }
     }
+
+    public static function pay($userId, $price) {
+        return User::where('id', $userId)->where('balance', '>=', $price)->update([
+            'deposit' => DB::raw('deposit + ' . $price),
+            'balance' => DB::raw('balance - ' . $price),
+        ]);
+	}
 }

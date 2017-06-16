@@ -583,9 +583,9 @@ form{margin: 6px 0 10px 0;}
 .lease-pay-btn h4{color: #999; margin: 12px 0 16px 0; font-size: 13px;}
 .lease-pay-btn a{ display: inline-block; width: 43%; padding: 4% 0; text-align: center; background: #0c9; border-radius: 4px; color: #fff; margin: 0 2%;}
 .lease-pay-btn{ text-align: center;}
-.lease-pay-btn a i{display: inline-block; width: 16px; height: 16px; position: relative; top: 2px; margin-right: 2px; }
-.lease-pay-btn a .icon-iphone{background: url(images/icon-iphone.png) no-repeat;background-size: 16px 16px;}
-.lease-pay-btn a .icon-key{background: url(images/icon-charge.png) no-repeat;background-size: 16px 16px;}
+/*.lease-pay-btn a i{display: inline-block; width: 16px; height: 16px; position: relative; top: 2px; margin-right: 2px; }
+.lease-pay-btn a .icon-iphone{background: url(/images/icon-iphone.png) no-repeat;background-size: 16px 16px;}
+.lease-pay-btn a .icon-key{background: url(images/icon-charge.png) no-repeat;background-size: 16px 16px;}*/
 .shop-pay-footer{width: 90%;padding: 10px 5%;background: #eee;}
 .shop-pay-footer h4{text-align: center;position: relative;margin: 10px 0 14px 0;font-size: 16px;}
 .shop-pay-footer h4 span:before{left: 0;}

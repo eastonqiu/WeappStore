@@ -22,13 +22,15 @@ Route::group(['middleware' => 'auth'], function () {
 Auth::routes();
 
 Route::any('wechat', 'WechatController@serve');
+Route::any('pay_notify', 'WechatController@payNotify');
 
 // Route::group(['middleware' => ['web', 'wechat.oauth']], function () {
 // 	Route::get('wechat_auth', 'WechatController@auth');
 // });
 
-Route::group(['middleware' => ['web.user']], function () {
-    Route::get('/borrow', 'BorrowController@borrow');
+Route::group(['prefix' => 'borrow', 'middleware' => ['web.user']], function () {
+    Route::get('/', 'BorrowController@index');
+    Route::get('/order', 'BorrowController@order');
 });
 
 Route::group(['prefix' => 'admin', 'middleware'=>'auth', 'namespace' => 'Admin'], function () {
