@@ -8,6 +8,7 @@ use App\Common\Errors;
 use EasyWeChat;
 use EasyWeChat\Payment\Order;
 use Log;
+use App\Models\User;
 use App\Models\Device;
 
 class BorrowOrder extends Model
@@ -17,7 +18,7 @@ class BorrowOrder extends Model
     protected $primaryKey = 'orderid';
 
     const PRODUCT_LIST = [
-        '1' => ['name' => '充电宝', 'price' => 10000], // 单位是分
+        '1' => ['name' => '充电宝', 'price' => 1], // 单位是分
     ];
 
     protected $guarded = [
@@ -122,14 +123,51 @@ class BorrowOrder extends Model
             // ...
         ]);
 
-        $result = EasyWechat::payment()->prepare($wechatOrder);
+        $payment = EasyWechat::payment();
+        $result = $payment->prepare($wechatOrder);
         if ($result->return_code == 'SUCCESS' && $result->result_code == 'SUCCESS'){
             $prepayId = $result->prepay_id;
-            return Errors::error(Errors::ORDER_PAY_NEW, $prepayId);
+            return Errors::error(Errors::ORDER_PAY_NEW, $payment->configForPayment($prepayId));
         } else {
             Log::error("wechat unify order fail: return code: {$result->return_code}, result code: {$result->result_code}");
             return Errors::error(Errors::ORDER_WECHAT_ORDER_FAIL, "wechat unify order fail");
         }
+    }
+
+    function payNotify($orderid, $paid, $platform) {
+    	$order = BorrowOrder::find($orderid);
+    	$orderStatus = $order['status'];
+    	$user = User::find($order['user_id']);
+
+        if($order['status'] == ORDER_STATUS_WAIT_PAY){
+			// 若是部分支付, 需扣除账户余额
+			$price = $order['price'];
+			$needPayMore = 0;
+
+			if($paid < $price) {
+				$balance = $user['balance'];
+				Log::debug('balance: ' . $balance);
+				if($balance + $paid < $price) {
+					Log::error("balance not enough, please check {$user['id']} the paid: $paid");
+					$order['status'] = self::ORDER_STATUS_PAID_NOT_ENOUGH;
+                    $order['paid'] = $paid;
+                    $order->save();
+					return false;
+				}
+				$needPayMore = $price - $paid;
+				Log::debug('need pay more: ' . $needPayMore);
+			}
+			User::payMore($uid, $needPayMore, $order['price']);
+            $order['status'] = self::ORDER_STATUS_PAID;
+            $order['paid'] = $paid;
+            $order->save();
+
+            // 给设备推送 借命令
+            Device::borrow($deviceId, $orderid);
+    	} else {
+    		return false;
+    	}
+    	return true;
     }
 
     private static function _generateOrderId() {

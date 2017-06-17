@@ -6,7 +6,6 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Zizaco\Entrust\Traits\EntrustUserTrait;
 use Illuminate\Support\Facades\DB;
-use Log;
 
 class User extends Authenticatable
 {
@@ -61,6 +60,13 @@ class User extends Authenticatable
         return User::where('id', $userId)->where('balance', '>=', $price)->update([
             'deposit' => DB::raw('deposit + ' . $price),
             'balance' => DB::raw('balance - ' . $price),
+        ]);
+	}
+
+	public static function payMore($userId, $more, $deposit) {
+        return User::where('id', $userId)->where('balance', '>=', $more)->update([
+            'deposit' => DB::raw('deposit + ' . $deposit),
+            'balance' => DB::raw('balance - ' . $more),
         ]);
 	}
 }

@@ -33,38 +33,11 @@
 	<div class="shop-index-loading">
 		<img id="loading_img" src="/images/loading.gif"/>
 	</div>
-	<!--设备被占用状态-->
-	<div class="occupied-bg">
-		<div class="occupied-status">
-			<h4><img src="/images/icon-waitting .gif"/></h4>
-			<span>请稍后</span>
-			<!-- <div class="occupied-close"><a href="javascript:;">关闭</a></div> -->
-		</div>
-	</div>
-
-	<!--用户有未归还的订单-->
-	<div class="Withdrawals-log-bg">
-		<div class="Withdrawals-log">
-			<div class="mask-close-btn"><i></i></div>
-			<div class="Withdrawals-img"><img src="/images/prompt-bg.png"/></div>
-			<p>您有租借中的充电宝，无法继续租借</p>
-			<div class="Withdrawals-log-btn">
-				<a href="/index.php?mod=shop&act=showorder">查看租借记录</a>
-			</div>
-		</div>
-	</div>
 </div>
 
 <script>
-	$(".occupied-close a").click(function(){
-		$(".occupied-bg").css("display","none");
-	})
-	$(".mask-close-btn i").click(function(){
-		$(".Withdrawals-log-bg").css("display","none");
-	});
-
 	function pay(dId, pId) {
-		$(".loading-box").css("display","block");
+		$(".shop-index-loading").css("display","block");
 		var url = "/borrow/order?dId=" + dId + "&pId=" + pId;
 		$.ajax({
 			url: url,
@@ -73,7 +46,6 @@
 			success:function(data) {
 				if(data.errcode == {{ App\Common\Errors::ORDER_PAY_BY_ACCOUNT }}) {
 					alert("押金已从账户余额中扣取,请取充电柜上的电池, 谢谢!");
-					$(".shop-index-loading").css("display","none");
 				} else if(data.errcode == {{ App\Common\Errors::ORDER_PAY_NEW }}) {
 					prepayId = data.errmsg;
 					callpay();
@@ -84,16 +56,13 @@
 				} else {
 					alert(data.errmsg);
 				}
-				$(".loading-box").css("display","none");
 			},
 			error:function(e) {
-				//$.unblockUI();
-				$(".loading-box").css("display","none");
 				alert(JSON.stringify(e));
 				alert("服务器异常, 请稍后再试");
 			},
 			complete:function(e) {
-				//$.unblockUI();
+				$(".shop-index-loading").css("display","none");
 			}
 		});
 	}

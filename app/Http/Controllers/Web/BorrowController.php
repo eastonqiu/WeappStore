@@ -28,6 +28,6 @@ class BorrowController extends Controller {
     public function order(Request $request) {
         $deviceId = $request->input('dId');
         $productId = $request->input('pId');
-        return BorrowOrder::createOrder(session('user')['id'], $deviceId, $productId);
+        return BorrowOrder::createOrder(session('user_id'), $deviceId, $productId);
     }
 }

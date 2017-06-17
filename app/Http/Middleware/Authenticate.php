@@ -29,7 +29,7 @@ class Authenticate
         if(empty($wechatUser)) {
             return response(view('auth.fail'));
         }
-        //dd($wechatUser);
+        // dd($wechatUser);
 
         //dd($wechatUser);
 
@@ -38,22 +38,22 @@ class Authenticate
         if(empty($user)) {
             // new user
             $user = [
-                'name' => $wechatUser->nickname,
+                // 'name' => $wechatUser->nickname,
                 'password' => bcrypt(str_random(20)),
                 'email' => str_random(20),
                 'openid' => $wechatUser->id,
                 'platform' => User::PLATFORM_WECHAT,
-                'nickname' => $wechatUser->nickname,
-                'avatar' => $wechatUser->avatar,
-                'sex' => $wechatUser->original['sex'],
-                'country' => $wechatUser->original['country'],
-                'province' => $wechatUser->original['province'],
-                'city' => $wechatUser->original['city'],
+                // 'nickname' => $wechatUser->nickname,
+                // 'avatar' => $wechatUser->avatar,
+                // 'sex' => $wechatUser->original['sex'],
+                // 'country' => $wechatUser->original['country'],
+                // 'province' => $wechatUser->original['province'],
+                // 'city' => $wechatUser->original['city'],
             ];
             $user = User::create($user);
         }
 
-        session(["user" => $user]);
+        session(["user_id" => $user['id']]);
 
         return $next($request);
     }
