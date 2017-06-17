@@ -71,32 +71,20 @@
 			type: 'GET',
 			dataType: 'JSON',
 			success:function(data) {
-				if(data.errcode == 0) {
-					if(data.pay_type == 1) {
-						//alert("押金已从账户余额中扣取,请取充电柜上的电池, 谢谢!");
-						$(".shop-index-loading").css("display","none");
-						return;
-					} else if(data.pay_type == 0) {
-						// $.unblockUI();
-						jsApiParameters = data.jsApiParameters;
-						callpay();
-						$(".loading-box").css("display","none");
-						return;
-					}
-				} else if(data.errcode == 1) {
-					$(".occupied-bg").css("display","block");
+				if(data.errcode == {{ App\Common\Errors::ORDER_PAY_BY_ACCOUNT }}) {
+					alert("押金已从账户余额中扣取,请取充电柜上的电池, 谢谢!");
 					$(".shop-index-loading").css("display","none");
-					//$.unblockUI();
-				} else if(data.errcode ==2 ){
-					// alert("您有正在进行的租借服务，请先归还充电宝后再次尝试，谢谢。")
-					$(".Withdrawals-log-bg").css("display","block");
-					$(".shop-index-loading").css("display","none");
+				} else if(data.errcode == {{ App\Common\Errors::ORDER_PAY_NEW }}) {
+					prepayId = data.errmsg;
+					callpay();
+				} else if(data.errcode == {{ App\Common\Errors::ORDER_STOCK_NO_ENOUGH }} ){
+					alert("库存不足");
+				} else if(data.errcode == {{ App\Common\Errors::ORDER_WECHAT_ORDER_FAIL }} ){
+					alert("下单失败");
 				} else {
 					alert(data.errmsg);
-					//$.unblockUI();
-					$(".loading-box").css("display","none");
-
 				}
+				$(".loading-box").css("display","none");
 			},
 			error:function(e) {
 				//$.unblockUI();

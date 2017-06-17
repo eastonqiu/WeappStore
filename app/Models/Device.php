@@ -377,12 +377,12 @@ class Device extends Model
     public static function pushCmd($deviceId, $cmd, array $msg) {
         Log::debug("push cmd {$cmd} to {$deviceId} msg:" . json_encode($msg));
         $msg['msg_id'] = microtime(true);
-    	$msg['sid'] = $sid;
+    	$msg['device_id'] = $deviceId;
         // jpush or other push
     }
 
     public static function borrow($deviceId, $orderid) {
-        self::pushCmd($deviceId, ['orderid'=>$orderid]);
+        self::pushCmd($deviceId, self::PUSH_BORROW_BATTERY, ['orderid'=>$orderid]);
     }
 
     /*

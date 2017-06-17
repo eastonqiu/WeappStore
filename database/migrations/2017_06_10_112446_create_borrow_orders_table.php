@@ -45,7 +45,7 @@ class CreateBorrowOrdersTable extends Migration
             $table->text('fee_strategy')->nullable();
             $table->text('msg')->nullable();
 
-            $table->unsignedInteger('refund_no')->default(0);
+            $table->integer('refund_no')->default(0);
             $table->unsignedInteger('refundable')->default(0);
 
             $table->timestamps();

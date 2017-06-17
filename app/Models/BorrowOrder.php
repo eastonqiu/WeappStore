@@ -96,10 +96,11 @@ class BorrowOrder extends Model
         // 直接账户内支付
         if(User::pay($userId, $price)) {
             $needPay = false;
-            $order['refund_no'] = self::ORDER_CANT_REFUND;
-            $order['status'] = self::ORDER_STATUS_PAID;
-            $order->save();
-            Log::debug('pay by account balance money');
+            BorrowOrder::where('orderid', $orderid)->update([
+                'refund_no' => self::ORDER_CANT_REFUND,
+                'status' => self::ORDER_STATUS_PAID,
+            ]);
+            Log::debug('pay by account balance money, order status update ok');
 
             // 给设备推送 借命令
             Device::borrow($deviceId, $orderid);

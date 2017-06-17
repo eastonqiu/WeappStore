@@ -35,21 +35,20 @@ function isWeiXin(){
 }
 
 	// var jsApiParameters = <?php echo empty($jsApiParameters)? 'null' : $jsApiParameters;?>;
-    var jsApiParameters = 0;
+    var prepayId = 0;
 	function jsApiCall() {
-		jsApiParameters = eval('(' + jsApiParameters + ')');
+		prepayId = eval('(' + prepayId + ')');
 		WeixinJSBridge.invoke(
 			'getBrandWCPayRequest',
-			jsApiParameters,
+			prepayId,
 			function(res){
 				WeixinJSBridge.log(res.err_msg);
 				if( res.err_msg == "get_brand_wcpay_request:ok" ) {
 					//alert("{$orderid}\nPayment Succeed!");
 					//$('#form_order').submit();
-					// alert("支付成功，关闭本页面");
-					// wxApiCloseWindow();
+					alert("支付成功，关闭本页面");
+					wxApiCloseWindow();
 					var psurl = "/wxpay.php";
-					window.location.href=psurl+"?app=mcs&mod=wxpay&paymod=index&act=pay_success";
 				} else if ( res.err_msg == "get_brand_wcpay_request:cancel" ){
 					// alert("您已放弃支付,谢谢!");
 				} else if ( res.err_msg == "get_brand_wcpay_request:fail" ){
