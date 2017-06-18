@@ -16,4 +16,8 @@ class DeviceStrategy extends Model
     public function devices() {
         return $this->hasMany(Device::class);
     }
+
+    public static function defaultValue() {
+        return Setting::get(Setting::DEVICE_STRATEGY);
+    }
 }

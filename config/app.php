@@ -64,7 +64,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => 'Asia/Shanghai',
 
     /*
     |--------------------------------------------------------------------------
@@ -200,7 +200,7 @@ return [
 
         /*
          * Zizaco\Entrust RBAC
-         */ 
+         */
         Zizaco\Entrust\EntrustServiceProvider::class,
 
         Collective\Html\HtmlServiceProvider::class,

@@ -15,4 +15,8 @@ class Battery extends Model
 
 	const BATTERY_INSIDE = 0;
 	const BATTERY_OUTSIDE = 1;
+
+	public function device() {
+		return $this->belongsTo(Device::class);
+	}
 }

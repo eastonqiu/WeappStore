@@ -14,7 +14,7 @@ class Shop extends Model
     ];
 
     public function stations() {
-        return $this->hasMany(Station:class);
+        return $this->hasMany(Station::class);
     }
 
     public function feeStrategy() {
@@ -22,12 +22,11 @@ class Shop extends Model
     }
 
     public function getFeeStrategy() {
-        $strategy = $this->feeStrategy;
+        $strategy = $this->feeStrategy();
         if(empty($strategy)) {
-            $strategy = Settings::get(Settings::FEE_STRATEGY);
+            return FeeStrategy::defaultValue();
         } else {
-            $strategy = $strategy['value'];
+            return json_decode($strategy['value'], true);
         }
-        return json_decode($strategy, true);
     }
 }

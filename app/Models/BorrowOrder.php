@@ -29,21 +29,35 @@ class BorrowOrder extends Model
     const ORDER_STATUS_PAID = 1;
 
     // 借出
-    const ORDER_STATUS_CONFIRM = 2;
+    const ORDER_STATUS_BORROW_CONFIRM = 2;
     // sub status
-    const ORDER_STATUS_BORROW_CONFIRM_FIRST = 21;
+    const ORDER_SUB_STATUS_BORROW_CONFIRM_FIRST = 21;
+    const ORDER_SUB_STATUS_BORROW_CONFIRM_FINISH = 22;
 
     // 归还
     const ORDER_STATUS_RETURN = 3;
-    const ORDER_STATUS_DEPOSIT_OUT_NOT_RETURN = 31; // 超时未归还
-    const ORDER_STATUS_DEPOSIT_OUT_RETURN = 32; // 超时归还
+    const ORDER_SUB_STATUS_DEPOSIT_OUT_NOT_RETURN = 31; // 超时未归还
+    const ORDER_SUB_STATUS_DEPOSIT_OUT_RETURN = 32; // 超时归还
 
     // 失败, 故障原因见 sub status
     const ORDER_STATUS_FAIL = 4;
     // sub status
-    const ORDER_SUB_STATUS_FAIL = [
-        41 => '网络超时',
-        42 => '电机故障',
+    const ORDER_SUB_STATUS_FAIL_NETWORK_TIMEOUT = 41;
+
+    const ORDER_STATUS_MAP = [
+        self::ORDER_STATUS_WAIT_PAY => '未支付',
+        // 借出
+        self::ORDER_STATUS_BORROW_CONFIRM => '借出',
+        self::ORDER_SUB_STATUS_BORROW_CONFIRM_FIRST => '正在借出',
+        self::ORDER_SUB_STATUS_BORROW_CONFIRM_FINISH => '借出完成',
+        // 归还
+        self::ORDER_STATUS_RETURN => '归还',
+        self::ORDER_SUB_STATUS_DEPOSIT_OUT_NOT_RETURN => '租金扣完(未归还)',
+        self::ORDER_SUB_STATUS_DEPOSIT_OUT_RETURN => '租金扣完(归还)',
+        // 故障
+        self::ORDER_STATUS_FAIL => '故障',
+        self::ORDER_SUB_STATUS_FAIL_NETWORK_TIMEOUT => '网络超时',
+        '42' => '其他故障',
     ];
 
     // 提现退款相关
@@ -57,7 +71,7 @@ class BorrowOrder extends Model
 	public static function idempotent($orderid)
 	{
 		return BorrowOrder::where('orderid', $orderid)
-                ->whereRaw('unix_timestamp(updated_at) < ' . (time()-3))
+                ->whereRaw('unix_timestamp(updated_at1) < ' . (time()-3))
                 ->update(['updated_at' => date("y-m-d H:i:s",time())]);
 	}
 
@@ -118,7 +132,7 @@ class BorrowOrder extends Model
             'detail'           => self::PRODUCT_LIST[$productId]['name'],
             'out_trade_no'     => $orderid,
             'total_fee'        => $price, // 单位：分
-            'notify_url'       => config('SERVER_DOMAIN') . "/pay_notify", // 支付结果通知网址，如果不设置则会使用配置里的默认地址
+            'notify_url'       => env('SERVER_DOMAIN') . "/pay_notify", // 支付结果通知网址，如果不设置则会使用配置里的默认地址
             'openid'           => $user['openid'], // trade_type=JSAPI，此参数必传，用户在商户appid下的唯一标识，
             // ...
         ]);
@@ -134,12 +148,12 @@ class BorrowOrder extends Model
         }
     }
 
-    function payNotify($orderid, $paid, $platform) {
+    public static function payNotify($orderid, $paid, $platform) {
     	$order = BorrowOrder::find($orderid);
     	$orderStatus = $order['status'];
     	$user = User::find($order['user_id']);
 
-        if($order['status'] == ORDER_STATUS_WAIT_PAY){
+        if($order['status'] == self::ORDER_STATUS_WAIT_PAY){
 			// 若是部分支付, 需扣除账户余额
 			$price = $order['price'];
 			$needPayMore = 0;
@@ -157,13 +171,13 @@ class BorrowOrder extends Model
 				$needPayMore = $price - $paid;
 				Log::debug('need pay more: ' . $needPayMore);
 			}
-			User::payMore($uid, $needPayMore, $order['price']);
+			User::payMore($user['id'], $needPayMore, $order['price']);
             $order['status'] = self::ORDER_STATUS_PAID;
             $order['paid'] = $paid;
             $order->save();
 
             // 给设备推送 借命令
-            Device::borrow($deviceId, $orderid);
+            Device::borrow($order['borrow_device_id'], $orderid);
     	} else {
     		return false;
     	}

@@ -17,7 +17,6 @@ class BorrowController extends Controller {
         if(empty(Device::find($deviceId))) {
             abort(404);
         }
-        Log::debug(config('WECHAT_PAYMENT_KEY_PATH'));
         $productId = array_keys(BorrowOrder::PRODUCT_LIST)[0];
         return view('borrow.index', ['dId'=> $deviceId, 'pId' => $productId]);
     }

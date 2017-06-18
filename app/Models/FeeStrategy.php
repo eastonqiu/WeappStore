@@ -8,8 +8,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class FeeStrategy extends Model
 {
     use SoftDeletes;
-	
+
     protected $guarded = [
         'id', 'created_at', 'updated_at', 'deleted_at'
     ];
+
+    public static function defaultValue() {
+        return Setting::get(Setting::FEE_STRATEGY);
+    }
 }

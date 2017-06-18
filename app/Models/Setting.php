@@ -19,7 +19,7 @@ class Setting extends Model
     ];
 
     public static function get($key) {
-        $value = Setting::find($key);
+        $value = json_decode(Setting::find($key), true);
         // set default value
         if(empty($value)) {
             switch($key) {
@@ -33,13 +33,15 @@ class Setting extends Model
                 		"app_package"    => "com.lingyunstrong.mcsclient",
                 		"app_start_class" => "MainActivity",
                     ];
-                    $value = json_encode($value);
                     break;
                 case self::FEE_STRATEGY:
-                    // default
+                    $value = [
+                        'free' => 10,
+                    ];
                     break;
             }
         }
+
         return $value;
     }
 }

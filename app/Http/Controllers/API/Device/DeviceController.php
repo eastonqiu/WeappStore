@@ -44,7 +44,8 @@ class DeviceController extends Controller {
 	public function returnBack(Request $request) {
 		return  Device::returnBack(
 			$request->input('device_id'),
-			$request->input('battery')
+			$request->input('battery'),
+			$request->input('return_time') ? : NULL
 		);
 	}
 

@@ -34,26 +34,26 @@ class WechatController extends Controller
     }
 
     public function payNotify() {
+        Log::debug("wechat pay notify");
         $response = EasyWeChat::payment()->handleNotify(function($notify, $successful){
             $order = BorrowOrder::find($notify->out_trade_no);
             if(empty($order)) {
                 return false;
             }
-            Log::debug("{$notify->out_trade_no} wechat pay notify")
-            BorrowOrder::payNotify($notify->out_trade_no);
-            // 如果订单存在
-            // 检查订单是否已经更新过支付状态
-            
+            Log::debug("{$notify->out_trade_no} wechat pay notify");
             // 用户是否支付成功
             if ($successful) {
-                // 不是已经支付状态则修改为已经支付状态
-                $order->paid_at = time(); // 更新支付时间为当前时间
-                $order->status = 'paid';
-            } else { // 用户支付失败
-                $order->status = 'paid_fail';
+                if(BorrowOrder::payNotify($notify->out_trade_no, $notify->total_fee, User::PLATFORM_WECHAT)) {
+                    Log::debug("{$notify->out_trade_no} wechat pay notify successfully");
+                    return true;
+                } else {
+                    Log::error("{$notify->out_trade_no} wechat pay notify process fail");
+                    return 'process wechat pay fail';
+                }
+            } else {
+                Log::error("{$notify->out_trade_no} user wechat pay notify fail");
+                return 'user pay fail';
             }
-            $order->save(); // 保存订单
-            return true; // 返回处理完成
         });
         return $response;
     }

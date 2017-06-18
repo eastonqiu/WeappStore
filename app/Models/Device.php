@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Common\Errors;
+use App\Common\Push;
+use Illuminate\Support\Facades\DB;
 use Log;
 
 class Device extends Model
@@ -15,11 +17,12 @@ class Device extends Model
         'id', 'created_at', 'orderid', 'updated_at', 'deleted_at'
     ];
 
-    const PUSH_BORROW_BATTERY = 1;
-    const PUSH_POPUP_SLOT = 2;
-
     public function station() {
         return $this->belongsTo(Station::class);
+    }
+
+    public function batteries() {
+        return $this->hasMany(Battery::class);
     }
 
     public static function syncSetting($mac, $deviceInfo) {
@@ -77,23 +80,15 @@ class Device extends Model
         $device = Device::find($deviceId);
 
         foreach ($batteries as $battery) {
-            Battery::where(['id' => $battery['id']])->update([
-                'device_id' => 0,
-                'status' => Battery::BATTERY_OUTSIDE,
-            ]);
-
-            Slot::firstOrCreate(['device_id' => $deviceId, 'slot' => $battery['slot']])->update([
-                'battery_id' => 0,
-                // 'status' => , // 空槽
-            ]);
+            self::popup($deviceId, $battery['id']);
         }
 
         return Errors::success('remove battery successfully');
 	}
 
 	public static function borrowConfirm($deviceId, $orderid, $borrowBattery, $status) {
-
         $order = BorrowOrder::find($orderid);
+        $device = Device::find($deviceId);
         if(empty($order)) {
             return Errors::error(Errors::INVALID_ORDER_ID, 'invalid orderid');
         }
@@ -101,7 +96,7 @@ class Device extends Model
         if($order['status'] != BorrowOrder::ORDER_STATUS_PAID
             && $order['sub_status'] != BorrowOrder::ORDER_SUB_STATUS_BORROW_CONFIRM_FIRST) {
             // 直接检查是否已经确认
-            if($order['status'] == BorrowOrder::ORDER_STATUS_BORROW_CONFIRM) {
+            if($order['sub_status'] == BorrowOrder::ORDER_SUB_STATUS_BORROW_CONFIRM_FINISH) {
                 Log::debug('check, it is confirm now, need not retry, it is ok ' . $orderid . ', status:' . $order['status']);
                 return Errors::success('confirm success');
             }
@@ -119,26 +114,27 @@ class Device extends Model
             return Errors::error(Errors::INVALID_BATTERY_ID, 'invalid battery');
         }
         // 收费策略
-        $feeStrategy = Station::where('device_id', $deviceId)->shop->getFeeStrategy()->toArray();
+        $feeStrategy = Device::getFeeStrategy($deviceId);
         $borrowOrder['fee_strategy'] = json_encode($feeStrategy);
         // 借出电池信息
-        $orderMsg = json_decode($order['msg']);
-        $orderMsg['borrow_battery'] = $battery->toArray();
+        $orderMsg = json_decode($order['msg'], true);
+        $orderMsg['borrow_battery'] = $borrowBattery;
 
         switch($status) {
-            case 0:
+            case BorrowOrder::ORDER_SUB_STATUS_BORROW_CONFIRM_FIRST :
                 if($order['sub_status'] == BorrowOrder::ORDER_SUB_STATUS_BORROW_CONFIRM_FIRST) {
-                    Log::debug('network problem, status 0 has updated, it is ok');
+                    Log::debug('network problem, status confirm first has updated, it is ok');
                     return Errors::success('retry confirm success');
                 }
-            case 1:
+            case BorrowOrder::ORDER_SUB_STATUS_BORROW_CONFIRM_FINISH :
+                if($order['sub_status'] == BorrowOrder::ORDER_SUB_STATUS_BORROW_CONFIRM_FINISH) {
+                    Log::debug('network problem, status confirm finish has updated, it is ok');
+                    return Errors::success('retry confirm success');
+                }
                 // 判断若 status1与status0传过来的电池ID不同，则应用端两次确认的电池有出入，可能第一次确认要借出的电池有问题，进行了更换，需要将数据库里的数据进行回滚更新
-                if($battery['status'] == BATTERY::BATTERY_OUTSIDE && $order['battery_id'] != $battery['id']) {
+                if($battery['status'] == BATTERY::BATTERY_OUTSIDE && ! empty($order['battery_id']) && $order['battery_id'] != $battery['id']) {
                     //回滚电池绑定的订单号
-                    Battery::where('id', $order['battery_id'])->update([
-                        'status' => BATTERY::BATTERY_INSIDE,
-                        'orderid' => '',
-                    ]);
+                    self::rollback($deviceId, $order['battery_id']);
                     Log::warning('roll back battery order info, battery:' . $order['battery_id']);
                 }
 
@@ -147,20 +143,22 @@ class Device extends Model
                 $battery['orderid'] = $orderid;
                 $battery['status'] = BATTERY::BATTERY_OUTSIDE;
                 $battery->save();
-                Log::debug('update battery info');
+                self::popup($deviceId, $battery['id']);
+                Log::debug('update battery and slot info');
 
                 // 更新订单信息
-                if($status == 0) {
+                if($status == BorrowOrder::ORDER_SUB_STATUS_BORROW_CONFIRM_FIRST) {
                     //仅仅是确认, 不更新状态
                     $order['battery_id'] = $battery['id'];
-                    $order['sub_status'] = BorrowOrder::ORDER_STATUS_BORROW_CONFIRM_FIRST;
+                    $order['status'] = BorrowOrder::ORDER_STATUS_BORROW_CONFIRM;
+                    $order['sub_status'] = BorrowOrder::ORDER_SUB_STATUS_BORROW_CONFIRM_FIRST;
                     $order['msg'] = json_encode($orderMsg);
                     $order->save();
                     Log::debug('update order info');
                 } else {
                     $order['battery_id'] = $battery['id'];
                     $order['status'] = BorrowOrder::ORDER_STATUS_BORROW_CONFIRM;
-                    $order['sub_status'] = BorrowOrder::ORDER_STATUS_BORROW_CONFIRM_FIRST;
+                    $order['sub_status'] = BorrowOrder::ORDER_SUB_STATUS_BORROW_CONFIRM_FINISH;
                     $order['msg'] = json_encode($orderMsg);
                     $order->save();
 
@@ -195,12 +193,9 @@ class Device extends Model
                     return Errors::error(Errors::USER_ACCOUNT_REFUND_FAIL, 'user account refund fail');
                 }
 
-                if($order['sub_status'] == BorrowOrder::ORDER_STATUS_BORROW_CONFIRM_FIRST) {
+                if($order['sub_status'] == BorrowOrder::ORDER_SUB_STATUS_BORROW_CONFIRM_FIRST) {
                     //回滚电池绑定的订单号
-                    Battery::where('id', $order['battery_id'])->update([
-                        'status' => BATTERY::BATTERY_INSIDE,
-                        'orderid' => '',
-                    ]);
+                    self::rollback($deviceId, $order['battery_id']);
                     Log::warning('roll back battery order info, battery:' . $order['battery_id']);
                 }
 
@@ -234,7 +229,7 @@ class Device extends Model
             }
 	}
 
-	public static function returnBack($deviceId, $batteryInfo) {
+	public static function returnBack($deviceId, $batteryInfo, $returnTimeFromDevice = NULL) {
         Log::debug("return back {$batteryInfo['id']} in $deviceId");
     	if(empty($batteryInfo) || empty($batteryInfo['id']) || empty($deviceId)) {
     		return Errors::error(ERRORS::INVALID_PARAMS, 'invalid parameter');
@@ -257,21 +252,24 @@ class Device extends Model
     	}
 
     	// 幂等判断, 过滤重复并发请求
-    	if(! BorrowOrder::idempotent($orderid)) {
-    		Log::debug("return back repeated request {$battery['id']}, $orderid");
-    		return Errors::success("repeated request {$battery['id']}, $orderid");
-    	}
+    	// if(! BorrowOrder::idempotent($orderid)) {
+    	// 	Log::debug("return back repeated request {$battery['id']}, $orderid");
+    	// 	return Errors::success("repeated request {$battery['id']}, $orderid");
+    	// }
 
     	// 带归还时间验证, 单位为秒 数字长度为10, 长度为13是设备端传过来了单位为毫秒的, 这里进行规避
-    	if(! is_numeric($batteryInfo['time'])) {
-    		$batteryInfo['time'] = 0;
+    	if(! is_numeric($returnTimeFromDevice)) {
+    		$returnTimeFromDevice = 0;
     	}
-    	if(strlen($batteryInfo['time']) == 13) {
-    		$batteryInfo['time'] = ceil($batteryInfo['time'] / 1000);
+    	if(strlen($returnTimeFromDevice) == 13) {
+    		$returnTimeFromDevice = ceil($returnTimeFromDevice / 1000);
     	}
+        // 归还时间不能大于当前时间或者小于借出时间, 否则为非法, 采用当前时间归还
+    	$returnTime = (empty($returnTimeFromDevice) || ($returnTimeFromDevice > time()) || ($returnTimeFromDevice < $order['borrow_time'])) ? time() : $returnTimeFromDevice;
 
         $device = Device::find($deviceId);
-
+        // 更新电池信息
+        $battery['device_id'] = $deviceId;
         $battery['status'] = BATTERY::BATTERY_INSIDE;
         $battery['slot'] = $batteryInfo['slot'];
         $battery['power'] = $batteryInfo['power'];
@@ -279,23 +277,25 @@ class Device extends Model
         $battery['voltage'] = $batteryInfo['voltage'];
         $battery['current'] = $batteryInfo['current'];
         $battery->save();
-        Slot::where('device_id', $deviceId)->where('slot', $battery['slot'])->update([
-            'battery_id' => $battery['id'],
-        ]);
+        self::insertToSlot($deviceId, $battery['id'], $battery['slot']);
     	Log::debug('update battery status, inside station');
 
         // 更新订单状态
+        $returnShopId = 0;
+        if(!empty($device->station) && !empty($device->station->shop)) {
+            $returnShopId = $device->station->shop->id;
+        }
         $order['return_device_id'] = $deviceId;
         $order['return_device_ver'] = $device['device_ver'];
-        $order['return_station_id'] = $device->station->id ? : 0;
-        $order['return_shop_id'] = $device->station->shop->id ? : 0;
+        $order['return_station_id'] = empty($device->station) ? 0 : $device->station->id;
+        $order['return_shop_id'] = $returnShopId;
         $order['return_station_name'] = $device->getStationName();
         $order['return_time'] = $returnTime;
     	// 过滤重复归还
     	if($order['status'] != BorrowOrder::ORDER_STATUS_BORROW_CONFIRM) {
     		Log::error("the status of order:" . $orderid . " is wrong: " . $order['status']);
-    		if ($order['sub_status'] == BorrowOrder::ORDER_STATUS_DEPOSIT_OUT_NOT_RETURN) {
-                $order['sub_status'] = BorrowOrder::ORDER_STATUS_DEPOSIT_OUT_RETURN;
+    		if ($order['sub_status'] == BorrowOrder::ORDER_SUB_STATUS_DEPOSIT_OUT_NOT_RETURN) {
+                $order['sub_status'] = BorrowOrder::ORDER_SUB_STATUS_DEPOSIT_OUT_RETURN;
                 $order->save();
 
     			// $wxmsg = array('openid'=>$openid, 'platform'=>$platform, 'orderid'=>$orderid, 'difftime'=>($returnTime-$order['borrow_time']), 'returntime'=>$returnTime, 'usefee'=>$order['usefee'], 'battery'=>$battery['id'], 'return_station'=>$station['title'], 'needAdapterFee'=> 0, 'needCableFee'=> 0);
@@ -312,13 +312,14 @@ class Device extends Model
     	// 归还时间不能大于当前时间或者小于借出时间, 否则为非法, 采用当前时间归还
     	$returnTime = (empty($batteryInfo['time']) || ($batteryInfo['time'] > time()) || ($batteryInfo['time'] < $order['borrow_time'])) ? time() : $batteryInfo['time'];
 
-    	$usefee = calcFee($order['orderid'], $order['borrow_time'], $returnTime, $needAdapterFee, $needCableFee);
-    	if($usefee > $order['price'])
+    	//$usefee = calcFee($order['orderid'], $order['borrow_time'], $returnTime, $needAdapterFee, $needCableFee);
+        $usefee = 0;
+        if($usefee > $order['price'])
     		$usefee = $order['price'];
 
         $returnDeposit = $order['price'] - $usefee;
         Log::debug('price:' . $order['price'] . ', usefee:' . $usefee);
-    	Log::debug('start to refund to user account, refund:' . $orderMsg['refund_fee']);
+    	Log::debug('start to refund to user account, refund:' . $returnDeposit);
 
         // 退款给用户
         if(empty(User::returnDeposit($order['user_id'], $order['platform'], $returnDeposit, $order['price']))) {
@@ -333,7 +334,7 @@ class Device extends Model
         $order['msg'] = json_encode($orderMsg);
     	if($usefee >= $order['price']) {
     		Log::debug('borrow too long time, desposit not enough');
-    		$order['status'] = BorrowOrder::ORDER_STATUS_DEPOSIT_OUT_RETURN;
+    		$order['status'] = BorrowOrder::ORDER_SUB_STATUS_DEPOSIT_OUT_RETURN;
             $order->save();
 
     		// $wxmsg = array('openid'=>$openid, 'platform'=>$platform, 'orderid'=>$orderid, 'difftime'=>($returnTime-$order['borrow_time']), 'returntime'=>$returnTime, 'usefee'=>$usefee, 'battery'=>$battery_id, 'return_station'=>$station['title'], 'needAdapterFee'=>$needAdapterFee, 'needCableFee'=>$needCableFee, 'new_credit'=>$creditsInfo[0], 'total_credit'=>$creditsInfo[1]);
@@ -354,17 +355,24 @@ class Device extends Model
 	}
 
     public function getDeviceStrategy() {
-        $strategy = $this->deviceStrategy();
+        $strategy = $this->deviceStrategy;
         if(empty($strategy)) {
-            $strategy = Setting::get(Setting::DEVICE_STRATEGY);
+            return DeviceStrategy::defaultValue();
         } else {
-            $strategy = $strategy['value'];
+            return json_decode($strategy['value'], true);
         }
-        return json_decode($strategy, true);
+    }
+
+    public static function getFeeStrategy($deviceId) {
+        $device = Device::where('id', $deviceId)->with('station.shop.feeStrategy')->first();
+        if(! empty($device->station) && ! empty($device->station->shop) && ! empty($device->station->shop->feeStrategy)) {
+            return $device->station->shop->feeStrategy->toArray();
+        }
+        return FeeStrategy::defaultValue();
     }
 
     public function deviceStrategy() {
-        $this->belongsTo(DeviceStrategy::class);
+        return $this->belongsTo(DeviceStrategy::class);
     }
 
     public function getStationName() {
@@ -374,15 +382,15 @@ class Device extends Model
         return $this->station->name;
     }
 
-    public static function pushCmd($deviceId, $cmd, array $msg) {
+    public static function pushCmd($deviceId, $event, array $msg) {
         Log::debug("push cmd {$cmd} to {$deviceId} msg:" . json_encode($msg));
         $msg['msg_id'] = microtime(true);
     	$msg['device_id'] = $deviceId;
-        // jpush or other push
+        Push::push($deviceId, $event, $msg);
     }
 
     public static function borrow($deviceId, $orderid) {
-        self::pushCmd($deviceId, self::PUSH_BORROW_BATTERY, ['orderid'=>$orderid]);
+        self::pushCmd($deviceId, Push::PUSH_BORROW_BATTERY, ['orderid'=>$orderid]);
     }
 
     /*
@@ -390,5 +398,68 @@ class Device extends Model
     */
     public static function hasStock($deviceId) {
         return Device::find($deviceId)->usable > 0;
+    }
+
+    /*
+        弹出电池
+    */
+    public static function popup($deviceId, $batteryId) {
+        $battery = Battery::find($batteryId);
+        $battery['device_id'] = $deviceId;
+        $battery['status'] = Battery::BATTERY_OUTSIDE;
+        $battery->save();
+
+        Slot::where('device_id', $deviceId)->where('slot', $battery['slot'])->update([
+            'battery_id' => 0,
+            // 'status' => , // 空槽
+        ]);
+
+        Device::where('id', $deviceId)->where('total', '>', 0)->where('usable', '>', 0)->update([
+            'total' => DB::raw('total - 1'),
+            'usable' => DB::raw('usable - 1'),
+            'empty' => DB::raw('empty + 1'),
+        ]);
+    }
+
+    /*
+        弹出电池失败回滚
+    */
+    public static function rollback($deviceId, $batteryId) {
+        $rollBackBattery = Battery::find($batteryId);
+        $rollBackBattery['device_id'] = $deviceId;
+        $rollBackBattery['status'] = BATTERY::BATTERY_INSIDE;
+        $rollBackBattery['orderid'] = '';
+        $rollBackBattery->save();
+
+        Slot::where('device_id', $deviceId)->where('slot', $rollBackBattery['slot'])->update([
+            'battery_id' => $batteryId,
+        ]);
+
+        Device::where('id', $deviceId)->where('empty', '>', 0)->update([
+            'total' => DB::raw('total + 1'),
+            'usable' => DB::raw('usable + 1'),
+            'empty' => DB::raw('empty - 1'),
+        ]);
+    }
+
+    /*
+        插入电池
+    */
+    public static function insertToSlot($deviceId, $batteryId, $slot) {
+        Battery::where('id', $batteryId)->update([
+            'device_id' => $deviceId,
+            'slot' => $slot,
+            'status' => Battery::BATTERY_INSIDE,
+        ]);
+
+        Slot::where('device_id', $deviceId)->where('slot', $slot)->update([
+            'battery_id' => $batteryId,
+        ]);
+
+        Device::where('id', $deviceId)->where('empty', '>', 0)->update([
+            'total' => DB::raw('total + 1'),
+            'usable' => DB::raw('usable + 1'),
+            'empty' => DB::raw('empty - 1'),
+        ]);
     }
 }

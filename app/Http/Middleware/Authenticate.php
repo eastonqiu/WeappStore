@@ -38,7 +38,7 @@ class Authenticate
         if(empty($user)) {
             // new user
             $user = [
-                // 'name' => $wechatUser->nickname,
+                'name' => str_random(20),
                 'password' => bcrypt(str_random(20)),
                 'email' => str_random(20),
                 'openid' => $wechatUser->id,
