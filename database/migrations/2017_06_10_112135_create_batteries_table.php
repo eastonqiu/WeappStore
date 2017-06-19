@@ -23,6 +23,7 @@ class CreateBatteriesTable extends Migration
             $table->unsignedTinyInteger('temperature')->default(0);
             $table->string('orderid')->default('');
             $table->unsignedTinyInteger('status')->default(0)->index();
+            $table->unsignedTinyInteger('battery_status')->default(0)->index();
             $table->timestamp('last_sync')->nullable();
             $table->timestamps();
             $table->softDeletes();

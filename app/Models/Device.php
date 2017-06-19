@@ -55,12 +55,13 @@ class Device extends Model
             if(! empty($battery['id'])) {
                 Battery::firstOrCreate(['id' => $battery['id']])->update([
                     'id' => $battery['id'],
-                    'device_id' => $battery['device_id'],
+                    'device_id' => $deviceId,
                     'slot' => $battery['slot'],
                     'power' => $battery['power'],
                     'voltage' => $battery['voltage'],
                     'current' => $battery['current'],
                     'temperature' => $battery['temperature'],
+                    'battery_status' => $battery['battery_status'],
                     'last_sync' => date("y-m-d H:i:s",time()),
                 ]);
             }
@@ -68,6 +69,7 @@ class Device extends Model
             // 更新槽位信息
             Slot::firstOrCreate(['device_id' => $deviceId, 'slot' => $battery['slot']])->update([
                 'battery_id' => $battery['id'],
+                'status' => $battery['slot_status'],
                 // 'status' => $battery['status'],
                 'last_sync' => date("y-m-d H:i:s",time()),
             ]);
@@ -115,7 +117,7 @@ class Device extends Model
         }
         // 收费策略
         $feeStrategy = Device::getFeeStrategy($deviceId);
-        $borrowOrder['fee_strategy'] = json_encode($feeStrategy);
+        $order['fee_strategy'] = json_encode($feeStrategy);
         // 借出电池信息
         $orderMsg = json_decode($order['msg'], true);
         $orderMsg['borrow_battery'] = $borrowBattery;
@@ -307,7 +309,7 @@ class Device extends Model
     	}
 
     	$orderMsg = json_decode($order['msg'], true);
-    	$orderMsg['battery_return'] = $batteryInfo;
+    	$orderMsg['return_battery'] = $batteryInfo;
 
     	// 归还时间不能大于当前时间或者小于借出时间, 否则为非法, 采用当前时间归还
     	$returnTime = (empty($batteryInfo['time']) || ($batteryInfo['time'] > time()) || ($batteryInfo['time'] < $order['borrow_time'])) ? time() : $batteryInfo['time'];
@@ -330,11 +332,12 @@ class Device extends Model
 
         // 更新订单状态
         $order['status'] = BorrowOrder::ORDER_STATUS_RETURN;
+        $order['sub_status'] = BorrowOrder::ORDER_SUB_STATUS_RETURN_NORMAL;
         $order['usefee'] = $usefee;
         $order['msg'] = json_encode($orderMsg);
     	if($usefee >= $order['price']) {
     		Log::debug('borrow too long time, desposit not enough');
-    		$order['status'] = BorrowOrder::ORDER_SUB_STATUS_DEPOSIT_OUT_RETURN;
+    		$order['sub_status'] = BorrowOrder::ORDER_SUB_STATUS_DEPOSIT_OUT_RETURN;
             $order->save();
 
     		// $wxmsg = array('openid'=>$openid, 'platform'=>$platform, 'orderid'=>$orderid, 'difftime'=>($returnTime-$order['borrow_time']), 'returntime'=>$returnTime, 'usefee'=>$usefee, 'battery'=>$battery_id, 'return_station'=>$station['title'], 'needAdapterFee'=>$needAdapterFee, 'needCableFee'=>$needCableFee, 'new_credit'=>$creditsInfo[0], 'total_credit'=>$creditsInfo[1]);

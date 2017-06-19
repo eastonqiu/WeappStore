@@ -36,8 +36,9 @@ class BorrowOrder extends Model
 
     // 归还
     const ORDER_STATUS_RETURN = 3;
-    const ORDER_SUB_STATUS_DEPOSIT_OUT_NOT_RETURN = 31; // 超时未归还
-    const ORDER_SUB_STATUS_DEPOSIT_OUT_RETURN = 32; // 超时归还
+    const ORDER_SUB_STATUS_RETURN_NORMAL = 31; // 正常归还
+    const ORDER_SUB_STATUS_DEPOSIT_OUT_NOT_RETURN = 32; // 超时未归还
+    const ORDER_SUB_STATUS_DEPOSIT_OUT_RETURN = 33; // 超时归还
 
     // 失败, 故障原因见 sub status
     const ORDER_STATUS_FAIL = 4;
@@ -52,6 +53,7 @@ class BorrowOrder extends Model
         self::ORDER_SUB_STATUS_BORROW_CONFIRM_FINISH => '借出完成',
         // 归还
         self::ORDER_STATUS_RETURN => '归还',
+        self::ORDER_SUB_STATUS_RETURN_NORMAL => '正常归还',
         self::ORDER_SUB_STATUS_DEPOSIT_OUT_NOT_RETURN => '租金扣完(未归还)',
         self::ORDER_SUB_STATUS_DEPOSIT_OUT_RETURN => '租金扣完(归还)',
         // 故障
@@ -182,6 +184,35 @@ class BorrowOrder extends Model
     		return false;
     	}
     	return true;
+    }
+
+    public static function fee($orderid, $returnTime) {
+        global $FEE_SETTINGS;
+    	$feeSettings = empty($feeSettings['fee']) ? $FEE_SETTINGS: $feeSettings;
+    	if ( !empty($feeSettings['max_fee_time']) && !empty($feeSettings['max_fee']) ) {
+    		return calcFeeNew($feeSettings, $rentTime, $returnTime, $needAdapterFee, $needCableFee,$userNoFreeStatus, $useRewardFreeTime, $rewardFreeTime);
+    	}
+        $order = BorrowOrder::find($orderid);
+        if(empty($order)) {
+            return false;
+        }
+        $borrowTime = $order['borrow_time'];
+        $feeStrategy = json_decode($order['fee_strategy'], true);
+    	$useTime = $returnTime - $borrowTime;
+        $usetime = $usetime > 0 ? $usetime : 0;
+    	if ( !empty($feeStrategy['free_time']) && ($feeStrategy['free_time'] != 0) && $useTime <= ($feeStrategy['free_time'] * $feeStrategy['free_unit']) ) {
+    		LOG::DEBUG('customer return battery in free time');
+    		$usefee = 0;
+    	} else {
+    		// 每xxx收费xxx元
+    		$usefee = ceil($usetime / $feeSettings['fee_unit']) * $feeSettings['fee'];
+            //如果当前订单有免费时长和固定收费
+            $usefee = ($usefee > 0 ? $usefee : 0) + $feeSettings['fixed'];
+    	}
+
+        $usefee = $usefee > 0 ? $usefee : 0;
+
+    	return $usefee;
     }
 
     private static function _generateOrderId() {
