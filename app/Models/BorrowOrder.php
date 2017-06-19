@@ -187,11 +187,6 @@ class BorrowOrder extends Model
     }
 
     public static function fee($orderid, $returnTime) {
-        global $FEE_SETTINGS;
-    	$feeSettings = empty($feeSettings['fee']) ? $FEE_SETTINGS: $feeSettings;
-    	if ( !empty($feeSettings['max_fee_time']) && !empty($feeSettings['max_fee']) ) {
-    		return calcFeeNew($feeSettings, $rentTime, $returnTime, $needAdapterFee, $needCableFee,$userNoFreeStatus, $useRewardFreeTime, $rewardFreeTime);
-    	}
         $order = BorrowOrder::find($orderid);
         if(empty($order)) {
             return false;
@@ -201,18 +196,22 @@ class BorrowOrder extends Model
     	$useTime = $returnTime - $borrowTime;
         $usetime = $usetime > 0 ? $usetime : 0;
     	if ( !empty($feeStrategy['free_time']) && ($feeStrategy['free_time'] != 0) && $useTime <= ($feeStrategy['free_time'] * $feeStrategy['free_unit']) ) {
-    		LOG::DEBUG('customer return battery in free time');
+    		Log::debug('return battery in free time');
     		$usefee = 0;
     	} else {
-    		// 每xxx收费xxx元
+    		// 每单位时间收费
     		$usefee = ceil($usetime / $feeSettings['fee_unit']) * $feeSettings['fee'];
-            //如果当前订单有免费时长和固定收费
+            // 固定收费
             $usefee = ($usefee > 0 ? $usefee : 0) + $feeSettings['fixed'];
     	}
 
         $usefee = $usefee > 0 ? $usefee : 0;
 
     	return $usefee;
+    }
+
+    public static function cancelUnpaidOrderForNetworkTimeout() {
+        // BorrowOrder::where('')
     }
 
     private static function _generateOrderId() {

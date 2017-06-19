@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Common\Errors;
 use App\Common\Push;
+use App\Common\Message;
 use Illuminate\Support\Facades\DB;
 use Log;
 
@@ -165,25 +166,12 @@ class Device extends Model
                     $order->save();
 
                     // 推送模板消息
-                    // $deposit = $order['price'];
-                    // if($order['platform'] == PLATFORM_ZHIMA) {
-                    //     $deposit = 0;
-                    // }
-                    // $wxmsg = [
-                    //             'openid'=>$openid,
-                    //             'platform'=>$platform,
-                    //             'orderid'=>$orderid,
-                    //             'sid'=>$sid,
-                    //             'battery'=>$order['battery_id'],
-                    //             'borrow_station'=>$order['borrow_station_name'],
-                    //             'renttime'=>$order['borrow_time'],
-                    //             'price'=>$deposit,
-                    //             'new_credit'=>$creditsInfo[0],
-                    //             'total_credit'=>$creditsInfo[1],
-                    //             'cable' => $order['cable'],
-                    //         ];
-                    // $type = $platform == PLATFORM_WX ? WX_TEMPLATE : ALIPAY_TEMPLATE;
-                    // addMsgToQueue($type, getRentConfirmMsg($wxmsg));
+                    Message::borrow($order['platform'], [
+                        'openid'=>$order['openid'],
+                        'orderid'=>$order['orderid'],
+                        'borrow_station_name'=>$order['borrow_station_name'],
+                        'borrow_time'=>$order['borrow_time'],
+                    ]);
                 }
                 return Errors::success('confirm success');
             default:
@@ -216,16 +204,11 @@ class Device extends Model
 
                 Log::debug("update order {$orderid}");
 
-                // 推送消息
-                // if($data['status'] == 2) {
-                //     $wxmsg = array('openid'=>$openid, 'platform'=>$platform, 'orderid'=>$orderid, 'difftime'=>($returnTime-$order['borrow_time']), 'returntime'=>$returnTime, 'usefee'=>$usefee, 'battery'=>$error_cause, 'return_station'=>$orderMsg['return_station'], 'needAdapterFee'=>false);
-                //     $type = $platform == PLATFORM_WX ? WX_TEMPLATE : ALIPAY_TEMPLATE;
-                //     addMsgToQueue($type, getReturnMsg($wxmsg));
-                // } else {
-                //     $wxmsg = array('openid'=>$openid, 'platform'=>$platform, 'orderid'=>$orderid, 'refund'=>$deposit, 'refundTime'=>time(), 'isBattery'=>true, 'cause'=>$error_cause);
-                //     $type = $platform == PLATFORM_WX ? WX_TEMPLATE : ALIPAY_TEMPLATE;
-                //     addMsgToQueue($type, getRefundMsg($wxmsg));
-                // }
+                // 推送模板消息
+                Message::fail($order['platform'], [
+                    'openid'=>$order['openid'],
+                    'orderid'=>$order['orderid'],
+                ]);
 
                 return Errors::success('order and battery rollback success');
             }
@@ -254,10 +237,10 @@ class Device extends Model
     	}
 
     	// 幂等判断, 过滤重复并发请求
-    	// if(! BorrowOrder::idempotent($orderid)) {
-    	// 	Log::debug("return back repeated request {$battery['id']}, $orderid");
-    	// 	return Errors::success("repeated request {$battery['id']}, $orderid");
-    	// }
+    	if(! BorrowOrder::idempotent($orderid)) {
+    		Log::debug("return back repeated request {$battery['id']}, $orderid");
+    		return Errors::success("repeated request {$battery['id']}, $orderid");
+    	}
 
     	// 带归还时间验证, 单位为秒 数字长度为10, 长度为13是设备端传过来了单位为毫秒的, 这里进行规避
     	if(! is_numeric($returnTimeFromDevice)) {
@@ -300,9 +283,15 @@ class Device extends Model
                 $order['sub_status'] = BorrowOrder::ORDER_SUB_STATUS_DEPOSIT_OUT_RETURN;
                 $order->save();
 
-    			// $wxmsg = array('openid'=>$openid, 'platform'=>$platform, 'orderid'=>$orderid, 'difftime'=>($returnTime-$order['borrow_time']), 'returntime'=>$returnTime, 'usefee'=>$order['usefee'], 'battery'=>$battery['id'], 'return_station'=>$station['title'], 'needAdapterFee'=> 0, 'needCableFee'=> 0);
-    			// $type = $platform == PLATFORM_WX ? WX_TEMPLATE : ALIPAY_TEMPLATE;
-    			// addMsgToQueue($type, getReturnMsg($wxmsg));
+                // 推送模板消息
+                Message::return($order['platform'], [
+                    'openid'=>$order['openid'],
+                    'orderid'=>$order['orderid'],
+                    'use_time'=>$returnTime - $order['borrow_time'],
+                    'return_station_name' => $order['return_station_name'],
+                    'return_time' => $returnTime,
+                    'fee' => $order['usefee'],
+                ]);
     			return Errors::success('deposit reduced, can not return');
     		}
     		return Errors::success('error status, correct it success');
@@ -314,7 +303,7 @@ class Device extends Model
     	// 归还时间不能大于当前时间或者小于借出时间, 否则为非法, 采用当前时间归还
     	$returnTime = (empty($batteryInfo['time']) || ($batteryInfo['time'] > time()) || ($batteryInfo['time'] < $order['borrow_time'])) ? time() : $batteryInfo['time'];
 
-    	//$usefee = calcFee($order['orderid'], $order['borrow_time'], $returnTime, $needAdapterFee, $needCableFee);
+    	$usefee = BatteryOrder::fee($order['orderid'], $returnTime);
         $usefee = 0;
         if($usefee > $order['price'])
     		$usefee = $order['price'];
@@ -340,9 +329,15 @@ class Device extends Model
     		$order['sub_status'] = BorrowOrder::ORDER_SUB_STATUS_DEPOSIT_OUT_RETURN;
             $order->save();
 
-    		// $wxmsg = array('openid'=>$openid, 'platform'=>$platform, 'orderid'=>$orderid, 'difftime'=>($returnTime-$order['borrow_time']), 'returntime'=>$returnTime, 'usefee'=>$usefee, 'battery'=>$battery_id, 'return_station'=>$station['title'], 'needAdapterFee'=>$needAdapterFee, 'needCableFee'=>$needCableFee, 'new_credit'=>$creditsInfo[0], 'total_credit'=>$creditsInfo[1]);
-    		// $type = $platform == PLATFORM_WX ? WX_TEMPLATE : ALIPAY_TEMPLATE;
-    		// addMsgToQueue($type, getReturnMsg($wxmsg));
+            // 推送模板消息
+            Message::return($order['platform'], [
+                'openid'=>$order['openid'],
+                'orderid'=>$order['orderid'],
+                'use_time'=>$returnTime - $order['borrow_time'],
+                'return_station_name' => $order['return_station_name'],
+                'return_time' => $returnTime,
+                'fee' => $order['usefee'],
+            ]);
 
     		return Errors::success('desposit not enough, but can be returned');
     	}
@@ -350,10 +345,15 @@ class Device extends Model
 		Log::debug('update order data');
         $order->save();
 
-    	// $wxmsg = array('openid'=>$openid, 'platform'=>$platform, 'orderid'=>$orderid, 'difftime'=>($returnTime-$order['borrow_time']), 'returntime'=>$returnTime, 'usefee'=>$usefee, 'battery'=>$battery_id, 'return_station'=>$station['title'], 'needAdapterFee'=>$needAdapterFee, 'needCableFee'=>$needCableFee, 'new_credit'=>$creditsInfo[0], 'total_credit'=>$creditsInfo[1]);
-    	// $type = $platform == PLATFORM_WX ? WX_TEMPLATE : ALIPAY_TEMPLATE;
-    	// addMsgToQueue($type, getReturnMsg($wxmsg));
-    	// LOG::DEBUG("Refund template Succeed!");
+        // 推送模板消息
+        Message::return($order['platform'], [
+            'openid'=>$order['openid'],
+            'orderid'=>$order['orderid'],
+            'use_time'=>$returnTime - $order['borrow_time'],
+            'return_station_name' => $order['return_station_name'],
+            'return_time' => $returnTime,
+            'fee' => $order['usefee'],
+        ]);
         return Errors::success("return battery {$battery['id']} ok");
 	}
 
