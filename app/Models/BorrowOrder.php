@@ -17,12 +17,14 @@ class BorrowOrder extends Model
 
     protected $primaryKey = 'orderid';
 
+    public $incrementing = false;
+
     const PRODUCT_LIST = [
         '1' => ['name' => '充电宝', 'price' => 1], // 单位是分
     ];
 
     protected $guarded = [
-        'id', 'refund_no', 'refundable', 'created_at', 'updated_at', 'deleted_at'
+        'refund_no', 'refundable', 'created_at', 'updated_at', 'deleted_at'
     ];
 
     const ORDER_STATUS_WAIT_PAY = 0;
@@ -73,7 +75,7 @@ class BorrowOrder extends Model
 	public static function idempotent($orderid)
 	{
 		return BorrowOrder::where('orderid', $orderid)
-                ->whereRaw('unix_timestamp(updated_at1) < ' . (time()-3))
+                ->whereRaw('unix_timestamp(updated_at) < ' . (time()-3))
                 ->update(['updated_at' => date("y-m-d H:i:s",time())]);
 	}
 
@@ -194,20 +196,21 @@ class BorrowOrder extends Model
         $borrowTime = $order['borrow_time'];
         $feeStrategy = json_decode($order['fee_strategy'], true);
     	$useTime = $returnTime - $borrowTime;
-        $usetime = $usetime > 0 ? $usetime : 0;
+        $useTime = $useTime > 0 ? $useTime : 0;
+        $useFee = 0;
     	if ( !empty($feeStrategy['free_time']) && ($feeStrategy['free_time'] != 0) && $useTime <= ($feeStrategy['free_time'] * $feeStrategy['free_unit']) ) {
     		Log::debug('return battery in free time');
-    		$usefee = 0;
+    		$useFee = 0;
     	} else {
     		// 每单位时间收费
-    		$usefee = ceil($usetime / $feeSettings['fee_unit']) * $feeSettings['fee'];
-            // 固定收费
-            $usefee = ($usefee > 0 ? $usefee : 0) + $feeSettings['fixed'];
+    		// $useFee = ceil($useFee / $feeStrategy['fee_unit']) * $feeStrategy['fee'];
+            // // 固定收费
+            // $useFee = ($useFee > 0 ? $useFee : 0) + $feeStrategy['fixed'];
     	}
 
-        $usefee = $usefee > 0 ? $usefee : 0;
+        $useFee = $useFee > 0 ? $useFee : 0;
 
-    	return $usefee;
+    	return $useFee;
     }
 
     public static function cancelUnpaidOrderForNetworkTimeout() {

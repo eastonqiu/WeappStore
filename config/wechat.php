@@ -21,6 +21,10 @@ return [
     'token'   => env('WECHAT_TOKEN', 'your-token'),          // Token
     'aes_key' => env('WECHAT_AES_KEY', ''),                    // EncodingAESKey
 
+    'guzzle' => [
+        'timeout' => 30,
+    ],
+
     /**
      * 开放平台第三方平台配置信息
      */

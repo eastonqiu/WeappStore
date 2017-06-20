@@ -54,7 +54,7 @@ class Message {
     				"first" => ["value" => "", "color" => self::TEXT_COLOR],
     				"keyword1" => ["value" => $data['return_station_name'], "color" => self::TEXT_COLOR],
     				"keyword2" => ["value" => date('Y-m-d H:i:s', $data['return_time']), "color" => self::TEXT_COLOR],
-    				"keyword3" => ["value" => $data['use_time'] . '秒', "color" => self::TEXT_COLOR],
+    				"keyword3" => ["value" => Utils::timeForHuman($data['usetime']), "color" => self::TEXT_COLOR],
     				"keyword4" => ["value" => $data['orderid'], "color" => self::TEXT_COLOR],
     				"remark" => ["value" => "此次租借产生费用{$data['usefee']}元，点击详情提取剩余押金。如有疑问，请致电。", "color" => self::REMARK_COLOR]
                 ]

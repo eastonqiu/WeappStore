@@ -14,6 +14,8 @@ class Errors {
     const ORDER_STOCK_NO_ENOUGH = 7; // 库存不足
     const ORDER_WECHAT_ORDER_FAIL = 8; // 微信统一下单失败
 
+    const USER_ACCOUNT_REFUND_FAIL = 9; // 用户账号退款失败
+
     public static function error($errcode, $errmsg) {
         return ['errcode' => $errcode, 'errmsg' =>$errmsg];
     }

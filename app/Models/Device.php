@@ -287,10 +287,10 @@ class Device extends Model
                 Message::return($order['platform'], [
                     'openid'=>$order['openid'],
                     'orderid'=>$order['orderid'],
-                    'use_time'=>$returnTime - $order['borrow_time'],
+                    'usetime'=>$returnTime - $order['borrow_time'],
                     'return_station_name' => $order['return_station_name'],
                     'return_time' => $returnTime,
-                    'fee' => $order['usefee'],
+                    'usefee' => $order['usefee'],
                 ]);
     			return Errors::success('deposit reduced, can not return');
     		}
@@ -303,7 +303,7 @@ class Device extends Model
     	// 归还时间不能大于当前时间或者小于借出时间, 否则为非法, 采用当前时间归还
     	$returnTime = (empty($batteryInfo['time']) || ($batteryInfo['time'] > time()) || ($batteryInfo['time'] < $order['borrow_time'])) ? time() : $batteryInfo['time'];
 
-    	$usefee = BatteryOrder::fee($order['orderid'], $returnTime);
+    	$usefee = BorrowOrder::fee($order['orderid'], $returnTime);
         $usefee = 0;
         if($usefee > $order['price'])
     		$usefee = $order['price'];
@@ -333,10 +333,10 @@ class Device extends Model
             Message::return($order['platform'], [
                 'openid'=>$order['openid'],
                 'orderid'=>$order['orderid'],
-                'use_time'=>$returnTime - $order['borrow_time'],
+                'usetime'=>$returnTime - $order['borrow_time'],
                 'return_station_name' => $order['return_station_name'],
                 'return_time' => $returnTime,
-                'fee' => $order['usefee'],
+                'usefee' => $order['usefee'],
             ]);
 
     		return Errors::success('desposit not enough, but can be returned');
@@ -349,10 +349,10 @@ class Device extends Model
         Message::return($order['platform'], [
             'openid'=>$order['openid'],
             'orderid'=>$order['orderid'],
-            'use_time'=>$returnTime - $order['borrow_time'],
+            'usetime'=>$returnTime - $order['borrow_time'],
             'return_station_name' => $order['return_station_name'],
             'return_time' => $returnTime,
-            'fee' => $order['usefee'],
+            'usefee' => $order['usefee'],
         ]);
         return Errors::success("return battery {$battery['id']} ok");
 	}
