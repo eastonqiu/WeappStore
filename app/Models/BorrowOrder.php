@@ -10,6 +10,7 @@ use EasyWeChat\Payment\Order;
 use Log;
 use App\Models\User;
 use App\Models\Device;
+use App\Common\Message;
 
 class BorrowOrder extends Model
 {
@@ -61,7 +62,8 @@ class BorrowOrder extends Model
         // 故障
         self::ORDER_STATUS_FAIL => '故障',
         self::ORDER_SUB_STATUS_FAIL_NETWORK_TIMEOUT => '网络超时',
-        '42' => '其他故障',
+        '42' => '无可借电池',
+        '43' => '未知故障',
     ];
 
     // 提现退款相关
@@ -213,8 +215,43 @@ class BorrowOrder extends Model
     	return $useFee;
     }
 
-    public static function cancelUnpaidOrderForNetworkTimeout() {
-        // BorrowOrder::where('')
+    public function revertPaidOrder($errorStatus) {
+        if($this['status'] != BorrowOrder::ORDER_STATUS_PAID) {
+            Log::error("{$this['orderid']} cancel to refund fail, order status: {$this['status']}");
+            return false;
+        }
+
+        if(empty(User::returnDeposit($this['user_id'], $this['platform'], $this['price'], $this['price']))) {
+            Log::error("{$this['orderid']} cancel to refund fail, user id: {$this['user_id']}");
+            return false;
+        }
+
+        $orderMsg = json_decode($this['msg'], true);
+        if(isset($orderMsg['borrow_battery'])) {
+            $orderMsg['return_battery'] = $orderMsg['borrow_battery'];
+        }
+
+        // 更新订单状态
+        $this['status'] = BorrowOrder::ORDER_STATUS_FAIL;
+        $this['sub_status'] = $errorStatus;
+        $this['usefee'] = 0;
+        $this['msg'] = json_encode($orderMsg);
+        $this['return_device_id'] = $this['borrow_device_id'];
+        $this['return_device_ver'] = $this['borrow_device_ver'];
+        $this['return_station_id'] = $this['borrow_station_id'];
+        $this['return_shop_id'] = $this['borrow_shop_id'];
+        $this['return_station_name'] = $this['borrow_station_name'];
+        $this['return_time'] = time();
+        $this->save();
+
+        // 推送模板消息
+        Message::fail($this['platform'], [
+            'openid'=>$this['openid'],
+            'orderid'=>$this['orderid'],
+        ]);
+
+        Log::debug("revert orderid {$this['orderid']} success");
+        return true;
     }
 
     private static function _generateOrderId() {
