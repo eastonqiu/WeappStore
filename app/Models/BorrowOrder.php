@@ -48,6 +48,9 @@ class BorrowOrder extends Model
     // sub status
     const ORDER_SUB_STATUS_FAIL_NETWORK_TIMEOUT = 41;
 
+    // 支付异常
+    const ORDER_PAY_EXCEPTION_STATUS = 5;
+
     const ORDER_STATUS_MAP = [
         self::ORDER_STATUS_WAIT_PAY => '未支付',
         // 借出
@@ -64,6 +67,7 @@ class BorrowOrder extends Model
         self::ORDER_SUB_STATUS_FAIL_NETWORK_TIMEOUT => '网络超时',
         '42' => '无可借电池',
         '43' => '未知故障',
+        self::ORDER_PAY_EXCEPTION_STATUS => '支付异常',
     ];
 
     // 提现退款相关
@@ -158,7 +162,7 @@ class BorrowOrder extends Model
     	$order = BorrowOrder::find($orderid);
     	$orderStatus = $order['status'];
     	$user = User::find($order['user_id']);
-
+        Log::debug("pay notify $orderid, paid: $paid");
         if($order['status'] == self::ORDER_STATUS_WAIT_PAY){
 			// 若是部分支付, 需扣除账户余额
 			$price = $order['price'];
@@ -166,7 +170,7 @@ class BorrowOrder extends Model
 
 			if($paid < $price) {
 				$balance = $user['balance'];
-				Log::debug('balance: ' . $balance);
+				Log::debug("balance: $balance, paid: $paid");
 				if($balance + $paid < $price) {
 					Log::error("balance not enough, please check {$user['id']} the paid: $paid");
 					$order['status'] = self::ORDER_STATUS_PAID_NOT_ENOUGH;
@@ -177,9 +181,17 @@ class BorrowOrder extends Model
 				$needPayMore = $price - $paid;
 				Log::debug('need pay more: ' . $needPayMore);
 			}
-			User::payMore($user['id'], $needPayMore, $order['price']);
+			if(! User::payMore($user['id'], $needPayMore, $order['price'])) {
+                Log::error("user no enough balance, $orderid");
+                $order['status'] = self::ORDER_PAY_EXCEPTION_STATUS;
+                $order['paid'] = $paid;
+                $order['refundable'] = $paid;
+                $order->save();
+                return false;
+            }
             $order['status'] = self::ORDER_STATUS_PAID;
             $order['paid'] = $paid;
+            $order['refundable'] = $paid;
             $order->save();
 
             // 给设备推送 借命令
@@ -252,6 +264,16 @@ class BorrowOrder extends Model
 
         Log::debug("revert orderid {$this['orderid']} success");
         return true;
+    }
+
+    public static function getRefundableOrders($userId) {
+        return BorrowOrder::where('user_id', $userId)
+                    ->where('status', '<>', BorrowOrder::ORDER_STATUS_WAIT_PAY)
+                    ->where('refund_no', '>=', 0)
+                    ->where('refundable', '>', '0')
+                    ->orderBy('refundable', 'desc')
+                    ->orderBy('price', 'desc')
+                    ->get();
     }
 
     private static function _generateOrderId() {

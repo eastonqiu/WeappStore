@@ -24,13 +24,17 @@ Auth::routes();
 Route::any('wechat', 'WechatController@serve');
 Route::any('pay_notify', 'WechatController@payNotify');
 
-// Route::group(['middleware' => ['web', 'wechat.oauth']], function () {
-// 	Route::get('wechat_auth', 'WechatController@auth');
-// });
+Route::group(['middleware' => ['web.user']], function () {
+    // 租借模块
+    Route::get('/borrow/{deviceId}', 'BorrowController@index')->where('deviceId', '[0-9]+');;
+    Route::get('/borrow/order', 'BorrowController@order');
 
-Route::group(['prefix' => 'borrow', 'middleware' => ['web.user']], function () {
-    Route::get('/{deviceId}', 'BorrowController@index')->where('deviceId', '[0-9]+');;
-    Route::get('/order', 'BorrowController@order');
+    // 用户模块
+    Route::get('/user/profile', 'UserController@profile');
+    Route::get('/user/withdraw', 'UserController@withdraw');
+    Route::get('/user/withdraw_apply', 'UserController@withdrawApply');
+    Route::get('/user/orders', 'UserController@orders');
+    Route::get('/user/withdraws', 'UserController@withdraws');
 });
 
 Route::group(['prefix' => 'admin', 'middleware'=>'auth', 'namespace' => 'Admin'], function () {

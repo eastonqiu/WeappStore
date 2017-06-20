@@ -18,7 +18,7 @@ class BorrowController extends Controller {
             abort(404);
         }
         $productId = array_keys(BorrowOrder::PRODUCT_LIST)[0];
-        return view('borrow.index', ['dId'=> $deviceId, 'pId' => $productId]);
+        return view('borrow.index', ['device_Id'=> $deviceId, 'product_Id' => $productId]);
     }
 
     /*

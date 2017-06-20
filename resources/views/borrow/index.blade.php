@@ -14,7 +14,7 @@
 		<!--余额借用内容显示-->
 		<div class="lease-pay-btn">
 		<h4>充电宝自带充电线，请选择所需的接口类型</h4>
-		<a onclick="pay({{ $dId }}, {{ $pId }})" href="javascript:;">
+		<a onclick="pay({{ $device_Id }}, {{ $product_Id }})" href="javascript:;">
 		  	<i class="icon-iphone"></i>确认支付
 		</a>
 		</div>
@@ -46,6 +46,7 @@
 			success:function(data) {
 				if(data.errcode == {{ App\Common\Errors::ORDER_PAY_BY_ACCOUNT }}) {
 					alert("押金已从账户余额中扣取,请取充电柜上的电池, 谢谢!");
+					callCloseWindow();
 				} else if(data.errcode == {{ App\Common\Errors::ORDER_PAY_NEW }}) {
 					prepayId = data.errmsg;
 					callpay();

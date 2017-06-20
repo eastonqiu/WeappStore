@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateRefundLogsTable extends Migration
+class CreateWithdrawLogsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,7 +13,7 @@ class CreateRefundLogsTable extends Migration
      */
     public function up()
     {
-        Schema::create('refund_logs', function (Blueprint $table) {
+        Schema::create('withdraw_logs', function (Blueprint $table) {
             $table->increments('id');
             $table->unsignedInteger('user_id');
             $table->unsignedInteger('refund')->default(0);
