@@ -25,9 +25,9 @@ class UserController extends Controller {
      */
     public function withdraw(Request $request) {
         $user = User::find(session('user_id'));
-        $user['balance'] = round($user['balance'], 2);
-        $user['deposit'] = round($user['deposit'], 2);
-        $user['refund'] = round($user['refund'], 2);
+        $user['balance'] = round($user['balance'] / 100, 2);
+        $user['deposit'] = round($user['deposit'] / 100, 2);
+        $user['refund'] = round($user['refund'] / 100, 2);
         return view('user.withdraw', ['user'=> $user]);
     }
 
@@ -35,7 +35,8 @@ class UserController extends Controller {
      * 提现申请
      */
     public function withdrawApply(Request $request) {
-        $result = User::withdraw(session('user_id'));
+        $user = User::findOrFail(session('user_id'));
+        $result = $user->withdraw(session('user_id'));
         return $result;
     }
 

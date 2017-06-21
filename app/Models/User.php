@@ -6,6 +6,8 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Zizaco\Entrust\Traits\EntrustUserTrait;
 use Illuminate\Support\Facades\DB;
+use App\Common\Errors;
+use App\Common\Message;
 
 class User extends Authenticatable
 {
@@ -76,7 +78,7 @@ class User extends Authenticatable
 
     public function withdraw() {
         if($this['balance'] <= 0) {
-            return true;
+            return Errors::error(Errors::USER_ACCOUNT_WITHDRAW_BALANCE_NOT_ENOUGH, 'balance not enough');
         }
         // 先处理账户余额
         $refund = $this['balance'];
@@ -90,6 +92,7 @@ class User extends Authenticatable
         $withdraw = Withdraw::create([
             'user_id' => $this['id'],
             'refund' => $refund,
+            'refunded' => 0,
             'request_time' => date("y-m-d H:i:s",time()),
             'status' => Withdraw::WITHDRAW_APPLY_STATUS,
         ]);
@@ -99,10 +102,17 @@ class User extends Authenticatable
             $this['balance'] = $refund;
             $this['refund'] = $this['refund'] - $refund;
             $this->save();
-            return false;
+            return Errors::error(Errors::SYSTEM_DB_ERROR, 'system error');
         }
         // 退款
         $withdraw->refund();
-        return true;
+
+        // 推送模板消息
+        Message::withdraw($this['platform'], [
+            'openid' => $this['openid'],
+            'withdraw' => round($refund / 100, 2),
+        ]);
+
+        return Errors::success('withdraw apply ok');
     }
 }

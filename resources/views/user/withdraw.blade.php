@@ -29,7 +29,6 @@
 		<span id="refund_wait">{{ $user['refund'] }}</span>元
 	</div>
 	<div>
-		<input type="hidden" name="formhash" value="{FORMHASH}">
 		<input type="hidden" id="refund" name="refund" value="{{ $user['balance'] }}">
 		<div class="pagepaddingfix">
             提现金额: <span style='color:red'>{{ $user['balance'] }}元</span>
@@ -70,9 +69,9 @@ function refundReq() {
 		type:'GET',
 		dataType: 'JSON',
 		success:function(data) {
-			if(data.errcode == 0) {
+			if(data.errcode == {{ App\Common\Errors::NORMAL }}) {
 				// 更新界面
-				$('#balance').html(0).toFixed(2));
+				$('#balance').html(0).toFixed(2);
 				$('#refund_wait').html((parseFloat($('#refund_wait').html()) + parseFloat($('#refund').val())).toFixed(2));
 				// 提示
 				$('#refund_tip').html('申请成功，系统正在退款!!');
@@ -82,8 +81,8 @@ function refundReq() {
 					callCloseWindow();
 				});
 				return;
-			} else if(data.errcode == 1) {
-				$('#refund_tip').html('对不起，余额不足!!');
+			} else if(data.errcode == {{ App\Common\Errors::USER_ACCOUNT_WITHDRAW_BALANCE_NOT_ENOUGH }}) {
+				$('#refund_tip').html('余额不足!!');
 				$('#dlg_close').unbind('click');
 				$('#dlg_close').click(function() {
 					$.unblockUI();
@@ -95,7 +94,7 @@ function refundReq() {
 		        });
 				return;
 			} else {
-				alert('请求有误');
+				alert('系统繁忙, 请稍后再试');
 				alert(data.errmsg);
 				$.unblockUI();
 			}

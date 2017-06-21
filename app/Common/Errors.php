@@ -16,6 +16,9 @@ class Errors {
 
     const USER_ACCOUNT_REFUND_FAIL = 9; // 用户账号退款失败
 
+    const USER_ACCOUNT_WITHDRAW_BALANCE_NOT_ENOUGH = 10; // 用户账号余额不足提现
+    const SYSTEM_DB_ERROR = 11; // 数据库错误
+
     public static function error($errcode, $errmsg) {
         return ['errcode' => $errcode, 'errmsg' =>$errmsg];
     }

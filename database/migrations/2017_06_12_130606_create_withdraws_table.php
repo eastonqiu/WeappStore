@@ -21,7 +21,7 @@ class CreateWithdrawsTable extends Migration
             $table->unsignedTinyInteger('status')->default(0);
             $table->timestamp('request_time')->useCurrent();
             $table->timestamp('refund_time')->nullable();
-            $table->text('detail');
+            $table->text('detail')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

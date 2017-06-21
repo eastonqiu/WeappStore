@@ -159,6 +159,11 @@ class BorrowOrder extends Model
     }
 
     public static function payNotify($orderid, $paid, $platform) {
+    	// 幂等判断, 过滤重复并发请求
+    	if(! BorrowOrder::idempotent($orderid)) {
+    		Log::debug("pay notify repeated request {$battery['id']}, $orderid");
+    		return false;
+    	}
     	$order = BorrowOrder::find($orderid);
     	$orderStatus = $order['status'];
     	$user = User::find($order['user_id']);
@@ -272,7 +277,7 @@ class BorrowOrder extends Model
                     ->where('refund_no', '>=', 0)
                     ->where('refundable', '>', '0')
                     ->orderBy('refundable', 'desc')
-                    ->orderBy('price', 'desc')
+                    ->orderBy('borrow_time', 'asc')
                     ->get();
     }
 
@@ -285,7 +290,7 @@ class BorrowOrder extends Model
         $m = $date['minutes'];
         $s = $date['seconds'];
 		$sn = rand(1, 99999);
-		return sprintf("FTJ-%u%02u%02u-%02u%02u%02u-%05u", $year, $mon, $mday, $h, $m, $s, $sn);
+		return sprintf("XXX-%u%02u%02u-%02u%02u%02u-%05u", $year, $mon, $mday, $h, $m, $s, $sn);
     }
 
 }
