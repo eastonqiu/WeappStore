@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Web;
 use Log;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\BorrowOrder;
 use Illuminate\Http\Request;
 
 class UserController extends Controller {
@@ -44,22 +45,21 @@ class UserController extends Controller {
      * 租借记录
      */
     public function orders(Request $request) {
-        $user = User::find(session('user_id'));
-        $user['balance'] = round($user['balance'], 2);
-        $user['deposit'] = round($user['deposit'], 2);
-        $user['refund'] = round($user['refund'], 2);
-        return view('user.orders', ['user'=> $user]);
+        $orders = BorrowOrder::where('user_id', session('user_id'))
+                            -> where('status', '<>', BorrowOrder::ORDER_STATUS_WAIT_PAY)
+                            -> orderBy('orderid', 'desc');
+
+        return view('user.orders', ['orders'=> $orders]);
     }
 
     /*
      * 提现记录
      */
     public function withdraws(Request $request) {
-        $user = User::find(session('user_id'));
-        $user['balance'] = round($user['balance'], 2);
-        $user['deposit'] = round($user['deposit'], 2);
-        $user['refund'] = round($user['refund'], 2);
-        return view('user.withdraws', ['user'=> $user]);
+        $widthdraws = Withdraw::where('user_id', session('user_id'))
+                            -> orderBy('id', 'desc');
+
+        return view('user.withdraws', ['withdraws'=> $withdraws]);
     }
 
 }
