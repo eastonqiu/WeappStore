@@ -35,6 +35,7 @@ class Device extends Model
         $device->save();
         $strategy = $device->getDeviceStrategy();
         $strategy['device_id'] = $device['id'];
+        $strategy['server_time'] = microtime(true); // 精确到微秒
 		return $strategy;
 	}
 
@@ -386,7 +387,7 @@ class Device extends Model
     }
 
     public static function pushCmd($deviceId, $event, array $msg) {
-        Log::debug("push cmd {$cmd} to {$deviceId} msg:" . json_encode($msg));
+        Log::debug("push cmd {$event} to {$deviceId} msg:" . json_encode($msg));
         $msg['msg_id'] = microtime(true);
     	$msg['device_id'] = $deviceId;
         Push::push($deviceId, $event, $msg);

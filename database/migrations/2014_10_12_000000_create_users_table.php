@@ -19,6 +19,8 @@ class CreateUsersTable extends Migration
             $table->string('email')->unique();
             $table->string('password');
             $table->string('openid')->default('')->index();
+            $table->string('unionid')->default('')->index();
+            $table->string('openid_weapp')->default('')->index();
             $table->string('nickname')->default('')->index();
             $table->integer('platform')->default('0')->index();
             $table->string('avatar')->default('users/default.png');

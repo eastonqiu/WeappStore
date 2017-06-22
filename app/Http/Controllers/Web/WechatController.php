@@ -38,22 +38,21 @@ class WechatController extends Controller
         $response = EasyWeChat::payment()->handleNotify(function($notify, $successful){
             $order = BorrowOrder::find($notify->out_trade_no);
             if(empty($order)) {
-                return false;
+                Log::error("{$notify->out_trade_no} does not exist");
+                return true;
             }
             Log::debug("{$notify->out_trade_no} wechat pay notify");
             // 用户是否支付成功
             if ($successful) {
                 if(BorrowOrder::payNotify($notify->out_trade_no, $notify->total_fee, User::PLATFORM_WECHAT)) {
                     Log::debug("{$notify->out_trade_no} wechat pay notify successfully");
-                    return true;
                 } else {
                     Log::error("{$notify->out_trade_no} wechat pay notify process fail");
-                    return 'process wechat pay fail';
                 }
             } else {
                 Log::error("{$notify->out_trade_no} user wechat pay notify fail");
-                return 'user pay fail';
             }
+            return true; // 统一处理成功
         });
         return $response;
     }
