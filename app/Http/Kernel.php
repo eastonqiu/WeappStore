@@ -42,6 +42,11 @@ class Kernel extends HttpKernel
             'wechat.oauth',
             'platform.auth',
         ],
+
+        'web.maintain' => [
+            'web.user',
+            'maintain',
+        ]
     ];
 
     /**
@@ -64,5 +69,6 @@ class Kernel extends HttpKernel
         'ability' => \Zizaco\Entrust\Middleware\EntrustAbility::class,
         'device.auth' => \App\Http\Middleware\DeviceAuthenticated::class,
         'platform.auth' => \App\Http\Middleware\Authenticate::class,
+        'maintain' => \App\Http\Middleware\MaintainAuthenticated::class,
     ];
 }

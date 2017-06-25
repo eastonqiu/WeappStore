@@ -49,7 +49,7 @@
 	<a id="dlg_close">关闭</a>
 </div>
 <script src="/js/vendor/jquery-blockui/jquery.blockUI.js"></script>
-<link rel="stylesheet" href="/js/vendor/jquery-blockui/jquery-ui.css">
+<link rel="stylesheet" href="/js/vendor/jquery-ui.css">
 
 <script type="text/javascript">
 function refundReq() {

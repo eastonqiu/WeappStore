@@ -27,25 +27,13 @@
 				@endif
 			</div>
 			<div>
-				<h4>租借时长:<em>{{ ($order['return_time'] - $order['borrow_time']) }}</em></h4>
+				<h4>租借时长:<em>{{ $order['use_time'] }}</em></h4>
 				<h4 style="float: left;">产生费用:<em>{{ $order['usefee'] }}元</em></h4>
 				<div class="pull-up-status order-complete-pullUp">
-					<h4><i></i>收起</h4>
+					<h4><i></i></h4>
 				</div>
 			</div>
 
-		</div>
-		<div class="order-complete-fold">
-			<div class="order-content">
-				<p>租借地点<span>{{ $order['borrow_station_name'] }}</span></p>
-				<p>租借时间<span>{{ $order['borrow_time'] }}</span></p>
-			</div>
-			<div class="order-money">
-				<h4>产生费用:<em>{{ $order['usefee'] }}元</em></h4>
-			</div>
-			<div class="pull-down-status order-complete-btn">
-				<h4><i></i>查看</h4>
-			</div>
 		</div>
 	</li>
 
@@ -61,28 +49,17 @@
 				<p>租借时间<span>{{ $order['borrow_time'] }}</span></p>
 			</div>
 			<div>
-				<h4 style="float: left;">租借时长:<em>{{ (time() - $order['borrow_time']) }}</em></h4>
+				<h4 style="float: left;">租借时长:<em>{{ $order['use_time'] }}</em></h4>
 				<div class="pull-up-status order-pullUp">
-					<h4><i></i>收起</h4>
+					<h4><i></i></h4>
 				</div>
 			</div>
 
 		</div>
-		<div class="order-complete-fold">
-			<div class="order-content">
-				<p>租借地点<span>{{ $order['borrow_station_name'] }}</span></p>
-				<p>租借时间<span>{{ $order['borrow_time'] }}</span></p>
-			</div>
-			<div class="order-money">
-				<h4>租借时长:<em>{{ (time() - $order['borrow_time']) }}</em></h4>
-			</div>
-			<div class="pull-down-status order-fold">
-				<h4><i></i>查看</h4>
-			</div>
-		</div>
 	</li>
 	@endif
 @endforeach
+</ul>
 @endif
 
 </div>

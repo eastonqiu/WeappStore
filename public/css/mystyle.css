@@ -30,11 +30,13 @@ input,a{-webkit-tap-highlight-color:rgba(255,0,0,0);-webkit-appearance: none;}
 /*showorder*/
 .linkbutton{padding: 5px;padding-top: 6px;padding-bottom: 6px;font-size: 14px;background-color: #f60;color: #fff;border: 0px;border-radius: 2px;text-decoration: none;font-weight: normal;}
 /*租借记录*/
+/*
 .order-complete-open{display: none;}
 .order-list li:first-child .order-complete-open{ display: block !important;}
 .order-list li:first-child .order-complete-fold{display: none !important;}
 .order-list li:first-child .super-open{display: block!important;}
 .order-list li:first-child .super-fold{display: none !important;}
+*/
 .order-present-fold .order-money{float: left;}
 .order-list .order-complete{border-right: 8px #0c9 solid;}
 .order-present .Presentmon h4{font-size: 13px;}

@@ -6,7 +6,9 @@ use Log;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\BorrowOrder;
+use App\Models\Withdraw;
 use Illuminate\Http\Request;
+use App\Common\Utils;
 
 class UserController extends Controller {
 
@@ -47,7 +49,18 @@ class UserController extends Controller {
     public function orders(Request $request) {
         $orders = BorrowOrder::where('user_id', session('user_id'))
                             -> where('status', '<>', BorrowOrder::ORDER_STATUS_WAIT_PAY)
-                            -> orderBy('orderid', 'desc');
+                            -> orderBy('orderid', 'desc')->get()->toArray();
+
+        foreach($orders as &$order) {
+            if(! empty($order['return_time'])) {
+                $order['use_time'] = Utils::timeForHuman($order['return_time'] - $order['borrow_time']);
+            } else {
+                $order['use_time'] = Utils::timeForHuman(time() - $order['borrow_time']);
+            }
+            $order['borrow_time'] = date("Y-m-d H:i:s", $order['borrow_time']);
+            $order['return_time'] = date("Y-m-d H:i:s", $order['return_time']);
+            $order['usefee'] = round($order['usefee'] / 100, 2);
+        }
 
         return view('user.orders', ['orders'=> $orders]);
     }
@@ -56,8 +69,13 @@ class UserController extends Controller {
      * 提现记录
      */
     public function withdraws(Request $request) {
-        $widthdraws = Withdraw::where('user_id', session('user_id'))
-                            -> orderBy('id', 'desc');
+        $withdraws = Withdraw::where('user_id', session('user_id'))
+                            -> orderBy('id', 'desc')->get()->toArray();
+
+        foreach($withdraws as &$w) {
+            $w['refund'] = round($w['refund'] / 100, 2);
+            $w['refunded'] = round($w['refunded'] / 100, 2);
+        }
 
         return view('user.withdraws', ['withdraws'=> $withdraws]);
     }

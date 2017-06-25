@@ -14,7 +14,7 @@
 		<!--余额借用内容显示-->
 		<div class="lease-pay-btn">
 		<h4>充电宝自带充电线，请选择所需的接口类型</h4>
-		<a onclick="pay({{ $device_Id }}, {{ $product_Id }})" href="javascript:;">
+		<a onclick="pay({{ $deviceId }}, {{ $productId }})" href="javascript:;">
 		  	<i class="icon-iphone"></i>确认支付
 		</a>
 		</div>
