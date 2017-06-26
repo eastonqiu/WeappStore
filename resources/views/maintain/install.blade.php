@@ -8,6 +8,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <meta content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" id="viewport" name="viewport">
+<link rel="stylesheet" href="http://cache.amap.com/lbs/static/main1119.css"/>
 <link href="/lbs/css/bootstrap.css" rel="stylesheet">
 <link href="/lbs/css/main.css?v=2" rel="stylesheet">
 <link rel="stylesheet" href="/js/vendor/jquery-ui.css">
@@ -148,8 +149,9 @@
 		<h4></h4>
 		<h4><span>关闭</span></h4>
 	</div>
-    <script src="http://api.map.baidu.com/api?v=2.0&ak=uUudLhdswAhPXMfobArfyTHD"
-        type="text/javascript"></script>
+    <script src="http://cache.amap.com/lbs/static/es5.min.js"></script>
+    <script src="http://webapi.amap.com/maps?v=1.3&key=您申请的key值"></script>
+    <script type="text/javascript" src="http://cache.amap.com/lbs/static/addToolbar.js"></script>
     <script type="text/javascript"
         src="/lbs/js/jquery.js"></script>
     <script src="/lbs/js/jquery.pager.js"

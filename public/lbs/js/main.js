@@ -1,6 +1,7 @@
 var maxCount = 32;
-
-var map = new BMap.Map("map"); // 创建Map实例
+var map = new AMap.Map('map', {
+    resizeEnable: true,
+});
 var userLocation = null;
 var userCity = null;
 //var curCity = null; // 默认城市
@@ -111,43 +112,44 @@ function addStation(site) {
 				}
 			}, 'json');
 	} else {
-        var geolocation = new BMap.Geolocation();
-        if (typeof(bindPoint) == "undefined") {
-            var mission = function(def) {
-                var def = $.Deferred();
-                geolocation.getCurrentPosition(function(r) {
-                    bindPoint = r.point;
-                    def.resolve();
-                });
-                return def.promise();
-            }
-        } else {
-            var mission = function(def) {
-                var def = $.Deferred();
-                def.resolve();
-                return def.promise();
-            }
-        }
-            $.when(mission()).done(function() {
-                data.latitude = bindPoint.lat;
-                data.longitude = bindPoint.lng;
-                $.get( url, data,
-                    function(data) {
-                        console.log(data);
-                        console.log('center data: ' + data.message);
-                        if (data.errcode == 0) {
-							$(".mask-addStation-bg").css("display","none");
-                            // $('#bindAddress').trigger('click', [data.id, stationName, stationDesc, stationAddress] );
-                            alert('新增并绑定成功!');
-							wxApiCloseWindow();
-                        } else {
-							$(".mask-addStation-bg").css("display","none");
-                            //alert('新增失败，请重新添加!' + data.errmsg);
-							$(".fail-status-content h4:first-child").text(data.errmsg + "新增失败，请重新添加!");
-							$(".mask-fail-status").css("display","block");
-                        }
-                    }, 'json');
-            });
+		map.plugin('AMap.Geolocation', function() {
+	        geolocation = new AMap.Geolocation({
+	            enableHighAccuracy: true,//是否使用高精度定位，默认:true
+	            timeout: 10000,          //超过10秒后停止定位，默认：无穷大
+	            buttonOffset: new AMap.Pixel(10, 20),//定位按钮与设置的停靠位置的偏移量，默认：Pixel(10, 20)
+	            zoomToAccuracy: true,      //定位成功后调整地图视野范围使定位位置及精度范围视野内可见，默认：false
+	            buttonPosition:'RB'
+	        });
+	        map.addControl(geolocation);
+	        geolocation.getCurrentPosition();
+	        AMap.event.addListener(geolocation, 'complete', onGeoComplete);//返回定位信息
+	        AMap.event.addListener(geolocation, 'error', onGeoError);      //返回定位出错信息
+	    });
+	    //解析定位结果
+	    function onGeoComplete(data) {
+	        bindPoint = {'lng' : data.position.getLng(), 'lat' : data.position.getLat()};
+
+            $.get( url, data,
+                function(data) {
+                    console.log(data);
+                    console.log('center data: ' + data.message);
+                    if (data.errcode == 0) {
+						$(".mask-addStation-bg").css("display","none");
+                        // $('#bindAddress').trigger('click', [data.id, stationName, stationDesc, stationAddress] );
+                        alert('新增并绑定成功!');
+						wxApiCloseWindow();
+                    } else {
+						$(".mask-addStation-bg").css("display","none");
+                        //alert('新增失败，请重新添加!' + data.errmsg);
+						$(".fail-status-content h4:first-child").text(data.errmsg + "新增失败，请重新添加!");
+						$(".mask-fail-status").css("display","block");
+                    }
+                }, 'json');
+	    }
+	    //解析定位错误信息
+	    function onGeoError(data) {
+	        alert('定位失败');
+	    }
     }
 }
 
@@ -161,11 +163,6 @@ $(".fail-status-content h4 span").click(function(){
     // 初始化地图模块相关代码
     map.enableScrollWheelZoom(); //启用滚轮放大缩小 map.enableContinuousZoom(); //
     // 启用地图惯性拖拽，默认禁用
-    // map.enableInertialDragging(); //
-    // 启用连续缩放效果，默认禁用。 map.addControl(new
-    // BMap.NavigationControl()); // 添加平移缩放控件
-    //map.addControl(new BMap.OverviewMapControl()); // 添加缩略地图控件
-    //map.addControl(new BMap.MapTypeControl()); // 添加地图类型控件
     // 初始化地图,设置中心点坐标和地图级别
 //  map.centerAndZoom(new BMap.Point(116.404, 39.915), 15);
 //  map.setCurrentCity("深圳"); //由于有3D图，需要设置城市哦
@@ -224,63 +221,59 @@ $(".fail-status-content h4 span").click(function(){
         /*if(curCity != null) {
             searchAction('', 0, LOCAL_SEARCH);
         }*/
-
-        var geolocation = new BMap.Geolocation();
-        var gc = new BMap.Geocoder();
-        geolocation.getCurrentPosition(function(r) {
-            if (this.getStatus() == BMAP_STATUS_SUCCESS) {
-                userLocation = r.point;
-                var mk = new BMap.Marker(userLocation);
-                mk.setIcon(getIcon(10));
-                map.addOverlay(mk);
-                map.addEventListener("dragend",function(){
-                    // 移动结束，让地图点自动居中
-                    dragcount = 1;
-                    if(mk){
-                        mk.setPosition(map.getCenter());
-                    }
-                    fillCityInfo(mk.getPosition());
-                });
-                //map.centerAndZoom(userLocation, 15);
-                // alert('您的位置：' + r.point.lng + ',' + r.point.lat);
-                gc.getLocation(r.point, function(rs) {
-                    var addComp = rs.addressComponents;
-                    userCity = addComp.city;
-                    console.log(addComp.province + addComp.city + addComp.district +
-                    addComp.street + addComp.streetNumber);
-                    console.log('get location');
-                    $('#get-province').val(addComp.province);
-                    $('#get-province').trigger('change', [addComp.province, 1]);
-                    $('#get-city').val(addComp.city);
-                    $('#get-city').trigger('change', [addComp.province, addComp.city, 1]);
-                    $('#get-area').val(addComp.district);
-                    $('#street').val(addComp.street + addComp.streetNumber);
-                    if(curCity == null || isInCurCity(userCity)) {
-                        changeCity(userCity);
-                        searchAction('', 0, NEARBY_SEARCH, userLocation);
-                    } else {
-                        searchAction('', 0, LOCAL_SEARCH);
-                    }
-                });
-                // map.panTo(r.point);
-            } else {
-                alert('定位失败,请允许获取位置信息,谢谢.failed' + this.getStatus());
-                $.unblockUI();
-            }
-
-        }, {
-            enableHighAccuracy : true
-        });
-        // 关于状态码
-        // BMAP_STATUS_SUCCESS 检索成功。对应数值“0”。
-        // BMAP_STATUS_CITY_LIST 城市列表。对应数值“1”。
-        // BMAP_STATUS_UNKNOWN_LOCATION 位置结果未知。对应数值“2”。
-        // BMAP_STATUS_UNKNOWN_ROUTE 导航结果未知。对应数值“3”。
-        // BMAP_STATUS_INVALID_KEY 非法密钥。对应数值“4”。
-        // BMAP_STATUS_INVALID_REQUEST 非法请求。对应数值“5”。
-        // BMAP_STATUS_PERMISSION_DENIED 没有权限。对应数值“6”。(自 1.1 新增)
-        // BMAP_STATUS_SERVICE_UNAVAILABLE 服务不可用。对应数值“7”。(自 1.1 新增)
-        // BMAP_STATUS_TIMEOUT 超时。对应数值“8”。(自 1.1 新增)
+		map.plugin('AMap.Geolocation', function() {
+	        geolocation = new AMap.Geolocation({
+	            enableHighAccuracy: true,//是否使用高精度定位，默认:true
+	            timeout: 10000,          //超过10秒后停止定位，默认：无穷大
+	            buttonOffset: new AMap.Pixel(10, 20),//定位按钮与设置的停靠位置的偏移量，默认：Pixel(10, 20)
+	            zoomToAccuracy: true,      //定位成功后调整地图视野范围使定位位置及精度范围视野内可见，默认：false
+	            buttonPosition:'RB'
+	        });
+	        map.addControl(geolocation);
+	        geolocation.getCurrentPosition();
+	        AMap.event.addListener(geolocation, 'complete', onGeoComplete);//返回定位信息
+	        AMap.event.addListener(geolocation, 'error', onGeoError);      //返回定位出错信息
+	    });
+	    //解析定位结果
+	    function onGeoComplete(data) {
+	        userLocation = {'lng' : data.position.getLng(), 'lat' : data.position.getLat()};
+            var mk = new BMap.Marker(userLocation);
+            mk.setIcon(getIcon(10));
+            map.addOverlay(mk);
+            map.addEventListener("dragend",function(){
+                // 移动结束，让地图点自动居中
+                dragcount = 1;
+                if(mk){
+                    mk.setPosition(map.getCenter());
+                }
+                fillCityInfo(mk.getPosition());
+            });
+            //map.centerAndZoom(userLocation, 15);
+            // alert('您的位置：' + r.point.lng + ',' + r.point.lat);
+            gc.getLocation(r.point, function(rs) {
+                var addComp = rs.addressComponents;
+                userCity = addComp.city;
+                console.log(addComp.province + addComp.city + addComp.district +
+                addComp.street + addComp.streetNumber);
+                console.log('get location');
+                $('#get-province').val(addComp.province);
+                $('#get-province').trigger('change', [addComp.province, 1]);
+                $('#get-city').val(addComp.city);
+                $('#get-city').trigger('change', [addComp.province, addComp.city, 1]);
+                $('#get-area').val(addComp.district);
+                $('#street').val(addComp.street + addComp.streetNumber);
+                if(curCity == null || isInCurCity(userCity)) {
+                    changeCity(userCity);
+                    searchAction('', 0, NEARBY_SEARCH, userLocation);
+                } else {
+                    searchAction('', 0, LOCAL_SEARCH);
+                }
+            });
+	    }
+	    //解析定位错误信息
+	    function onGeoError(data) {
+	        alert('定位失败');
+	    }
     }
 
     /**
