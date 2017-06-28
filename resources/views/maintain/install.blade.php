@@ -8,7 +8,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <meta content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" id="viewport" name="viewport">
-<link rel="stylesheet" href="http://cache.amap.com/lbs/static/main1119.css"/>
+<link rel="stylesheet" href="//cache.amap.com/lbs/static/main1119.css"/>
 <link href="/lbs/css/bootstrap.css" rel="stylesheet">
 <link href="/lbs/css/main.css?v=2" rel="stylesheet">
 <link rel="stylesheet" href="/js/vendor/jquery-ui.css">
@@ -18,7 +18,6 @@
     <div id="address-search">
         <input type="search" id="address" placeholder="输入检索关键字">
         <span class="btn btn-primary search-btn">搜索</span>
-        <!-- <span class="btn" id="chgMode">列表/地图</span> -->
     </div>
     <div id="mapbox_new" style="position: relative; overflow:hidden;">
         <div id="arrow_up"
@@ -119,7 +118,7 @@
 			   <li style="margin-bottom: 0;"><h6>标有<em>*</em>为必填项</h6></li>
 				<li class="addStation">
 					<a href="javascript:;" id="cancel" onclick="formCancel()">取消</a>
-					<a onclick="addStation('');">新增</a>
+					<a onclick="addStation();">新增</a>
 				</li>
 			</ul>
         </form>
@@ -149,9 +148,9 @@
 		<h4></h4>
 		<h4><span>关闭</span></h4>
 	</div>
-    <script src="http://cache.amap.com/lbs/static/es5.min.js"></script>
-    <script src="http://webapi.amap.com/maps?v=1.3&key=您申请的key值"></script>
-    <script type="text/javascript" src="http://cache.amap.com/lbs/static/addToolbar.js"></script>
+    <script src="//cache.amap.com/lbs/static/es5.min.js"></script>
+    <script src="//webapi.amap.com/maps?v=1.3&key=您申请的key值"></script>
+    <script type="text/javascript" src="//cache.amap.com/lbs/static/addToolbar.js"></script>
     <script type="text/javascript"
         src="/lbs/js/jquery.js"></script>
     <script src="/lbs/js/jquery.pager.js"
@@ -164,11 +163,7 @@
 
     <script type="text/javascript">
         var curCity = null;
-        var POI_TYPE = false;
         var BMAP_AK = "uUudLhdswAhPXMfobArfyTHDK";
-        if(POI_TYPE) {
-            BMAP_AK = "uLr3Yqy0G0LMmH0B5szXFw5u";
-        }
         var GEOTABLE_ID = "GEOTABLE_ID";
     </script>
     <script type="text/javascript"
@@ -185,7 +180,7 @@
     <script type="text/javascript"
         src="/lbs/js/addr_setting.js?v=2">
     </script>
-    <script src="http://cdn.bootcss.com/jquery.devbridge-autocomplete/1.2.27/jquery.autocomplete.js"></script>
+    <script src="//cdn.bootcss.com/jquery.devbridge-autocomplete/1.2.27/jquery.autocomplete.js"></script>
     <script>
 
     jQuery(function($){

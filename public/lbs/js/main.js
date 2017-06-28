@@ -58,7 +58,7 @@ function toggle() {
 //$("#listWrap a").click(function(){
 //  $('form').toggle();
 //  })
-function addStation(site) {
+function addStation() {
 	$(".mask-addStation-bg").css("display","block");
     stationName = $(":text[name='stationName']").val();
     stationProvince = $("#get-province").val();
@@ -67,10 +67,8 @@ function addStation(site) {
     stationStreet   = $("#street").val();
     stationDesc    = $(":text[name='stationDesc']").val();
     $(".mask-bg").css("display","none");
-    console.log(site);
-    // site = 'http://ycb.oh.lingyunstrong.com/';
-    // site = 'http://local.lingyunstrong.com/';
-    url = site + 'index.php?mod=init_addr&act=add';
+    
+    url = '/index.php?mod=init_addr&act=add';
 
     data = {
         "stationName": stationName,
@@ -160,12 +158,6 @@ $(".fail-status-content h4 span").click(function(){
 })
 
 !function() {
-    // 初始化地图模块相关代码
-    map.enableScrollWheelZoom(); //启用滚轮放大缩小 map.enableContinuousZoom(); //
-    // 启用地图惯性拖拽，默认禁用
-    // 初始化地图,设置中心点坐标和地图级别
-//  map.centerAndZoom(new BMap.Point(116.404, 39.915), 15);
-//  map.setCurrentCity("深圳"); //由于有3D图，需要设置城市哦
 
     location(); // 定位并查找附近的点
     // ==========================================
@@ -174,42 +166,6 @@ $(".fail-status-content h4 span").click(function(){
     var keyword = "", // 检索关键词
     page = 0, // 当前页码
     points = [];
-
-    function mapChange(e) {
-//      alert(e.type);
-        if(searchMode == BOUND_SEARCH) {
-            searchAction('', 0, BOUND_SEARCH);
-        }
-    }
-
-    function mapChange1(e) {
-        mapChange(e);
-    }
-
-    function mapChange2(e) {
-        mapChange(e);
-    }
-
-    // 绑定检索按钮事件
-    $('#searchBtn').bind('click', function() {
-        keyword = $('#keyword').val();
-        searchAction(keyword);
-    });
-
-    $('#nearby').bind('click', function() {
-//      searchMode = BOUND_SEARCH;
-        searchMode = NEARBY_SEARCH;
-        nearByRadius = $("#searchRadius").val();
-        if(nearByRadius == '')
-            nearByRadius = NEARBY_DEFAULT;
-        if(userLocation != null) {
-            changeCity(userCity);
-            searchAction('', 0, NEARBY_SEARCH, userLocation);
-            //map.panTo(userLocation);
-        } else if(userLocation != null) {
-            location();
-        }
-    });
 
     function location() {
         $.blockUI({
@@ -283,10 +239,6 @@ $(".fail-status-content h4 span").click(function(){
      * @param 当前页码
      */
     function searchAction(keyword, page, type, location) {
-        if(POI_TYPE) {
-            searchPOIAction(keyword, page, type, location);
-            return;
-        }
         page = page || 0;
         type = typeof(type) != "undefined"? type : searchMode;
         var url = "http://api.map.baidu.com/geosearch/v3/local?callback=?"; // 城市区域内搜索
@@ -313,7 +265,6 @@ $(".fail-status-content h4 span").click(function(){
             'geotable_id' : GEOTABLE_ID, //test 117126, mcs 119779
             'sortby' : 'distance:1',
             'radius' : nearByRadius,
-            'bounds' : getBounds(),
             'ak' : BMAP_AK // 用户ak
         };
         if (location) {
@@ -384,63 +335,6 @@ $(".fail-status-content h4 span").click(function(){
         });
     }
 
-    function searchPOIAction(keyword, page, type, location) {
-        page = 0;
-        type = typeof(type) != "undefined"? type : searchMode;
-        var url = "http://api.map.baidu.com/geodata/v3/poi/list"; // 城市区域内搜索
-        var data = {
-            'page_index' : page, // 页码
-            // 'scope' : '2', // 显示详细信息
-            'geotable_id' : GEOTABLE_ID, //test 117126, mcs 119779
-            'page_size' : 200,
-            'ak' : BMAP_AK // 用户ak
-        };
-
-        $.ajax({
-            type: "get",
-            contentType: "application/json; charset=utf-8",
-            dataType: "jsonp",
-            url: url,
-            data: data,
-            success: function (data) {
-                if(data.status != 0) {
-                    alert("地图服务暂不可用,请稍后再试,谢谢!");
-                    return;
-                }
-                data['contents'] = data['pois'];
-                delete data['pois'];
-                data['contents'].sort(function(a, b) {
-                    var da = map.getDistance(new BMap.Point(a.location[0], a.location[1]), location);
-                    var db = map.getDistance(new BMap.Point(b.location[0], b.location[1]), location);
-                    return da > db ? 1:-1;
-                });
-                renderMap(data, type, location);
-                if(page == 0) {
-                    if(points.length == 0) {
-                        map.centerAndZoom(curCity);
-                        var tip = '<p style="border-top:1px solid #DDDDDD;padding-top:10px;text-align:center;text-align:center;font-size:18px;" class="text-warning">抱歉，该城市暂时没有充电站信息</p>';
-                        $('#listBoby').html($(tip));
-                    } else {
-                        map.setViewport(points);
-                    }
-                }
-            },
-            error: function (XMLHttpRequest, textStatus, errorThrown) {
-                //baidu server error retry
-                console.log(textStatus + ", " + errorThrown);
-                //searchAction(keyword, page, type, location);
-                alert("地图服务暂不可用,请稍后再试,谢谢!");
-            },
-            complete: function() {
-                $.unblockUI();
-                $("#loading_img").css('display', 'none');
-                $('#main_new').css('display', 'block');
-                // $('#changecity').css('display', 'block');
-                //map.addControl(new BMap.ScaleControl()); // 添加比例尺控件
-            }
-        });
-    }
-
     function searchLocationForPoint(address) {
         var gc = new BMap.Geocoder();
         gc.getPoint(address, function(point) {
@@ -467,37 +361,6 @@ $(".fail-status-content h4 span").click(function(){
 			Util.setMapHeight();
 		});
 	});
-
-	// 办定列表/地图模式切换事件
-	$('#chgMode').bind('click', function() {
-		$('#listBox').toggle('normal');
-		$('#mapBox').toggle('normal', function() {
-			if ($('#mapBox').is(":visible")) { // 单显示地图时候，设置最佳视野
-				//mapAddEvents();
-				if(toggleRefresh) {
-					if(points.length != 0) {
-						map.setViewport(points);
-					}
-					else {
-						map.centerAndZoom(curCity);
-					}
-				}
-			} else {
-				//mapRemoveEvents();
-			}
-
-			toggleRefresh = false;
-		});
-	});
-
-	function getBounds() {
-		var bounds = map.getBounds();
-		var left = bounds.getSouthWest();
-		var right = bounds.getNorthEast();
-		if(left == null || right == null)
-			return '';
-		return left.lng + ',' + left.lat + ';' + right.lng + ',' + right.lat;
-	}
 
 	/**
 	 * 渲染地图模式
@@ -654,12 +517,6 @@ $(".fail-status-content h4 span").click(function(){
 //          .html($(tip));
         } else {
             $.each(content,function(i, item) {
-                if(POI_TYPE) {
-                    if(keyFilter[0] == "enable:1" && item.enable == 0)
-                        return true; //continue
-                    if(keyFilter[0] == "enable:0" && item.enable == 1)
-                        return true; //continue
-                }
                 //console.log(item);
                 var point = new BMap.Point(item.location[0],
                         item.location[1]), marker = new BMap.Marker(
@@ -729,7 +586,6 @@ $(".fail-status-content h4 span").click(function(){
                 //}
 
                 function switchToShowInfo() {
-                    $('#chgMode').trigger('click');
                     showInfo();
                 }
 
@@ -753,24 +609,6 @@ $(".fail-status-content h4 span").click(function(){
         }
         return points;
 
-    }
-
-    function resetMap() {
-        $('#keyword').val('');
-        $('#selectedValue').html('');
-        searchAction('');
-    }
-
-    function mapAddEvents() {
-        map.addEventListener('dblclick', mapChange);
-        map.addEventListener('zoomend', mapChange1);
-        map.addEventListener('moveend', mapChange2);
-    }
-
-    function mapRemoveEvents() {
-        map.removeEventListener('dblclick', mapChange);
-        map.removeEventListener('zoomend', mapChange1);
-        map.removeEventListener('moveend', mapChange2);
     }
 
     function getIcon(i) {
@@ -912,8 +750,4 @@ function formToggle() {
 function formCancel(){
     $('form').css("display","none");
     $(".mask-bg").css("display","none");
-    }
-// $("#cancel").click(function(){
-//     $('form').css("display","none");
-//     $(".mask-bg").css("display","none");
-// })
+}
